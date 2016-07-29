@@ -1,6 +1,6 @@
 # Bot_irc
 
-This is a dirty code for an IRC Bot controlable by the classical lib cmd in python (only for python2.7).
+This is a dirty code for an IRC Bot controlable by the cmd lib in python (only 2.7).
 
 The bot can auto reply form simple and structured request
 
