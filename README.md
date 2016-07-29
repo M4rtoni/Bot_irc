@@ -9,6 +9,7 @@ There is two version :
   - remote control : with socket you connect to the bot and his connect to the IRC server.
 
 You need specefic lib to run bot :
-  - croniter
-  - dateutil.parser
-  - An old version of Irclib and Ircbot
+  - ConfigParser and io (load stats)
+  - croniter (get cron task for VDM and DTC)
+  - dateutil.parser (check delta between to date)
+  - An old version of Irclib and Ircbot (to run the bot)
