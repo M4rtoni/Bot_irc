@@ -7,3 +7,8 @@ The bot can auto reply form simple and structured request
 There is two version :
   - direct control : the cmd controlor running over the main program,
   - remote control : with socket you connect to the bot and his connect to the IRC server.
+
+You need specefic lib to run bot :
+  - croniter
+  - dateutil.parser
+  - An old version of Irclib and Ircbot
