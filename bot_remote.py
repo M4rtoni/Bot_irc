@@ -1818,7 +1818,6 @@ if __name__ == "__main__":
     crondtc._iter = croniter('0 * * * *', datetime.now())
     RECV_BUFFER = 4096 
     PORT = 5000 
-    binary = Binary.Binary()
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     connect = False
