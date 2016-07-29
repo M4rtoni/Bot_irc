@@ -23,8 +23,17 @@ except ImportError:
     raise ImportError("You need libs IRC !")
 
 ###
-# Add your lib for encryption (more secure)
+# Change for your lib for encryption (more secure)
 ###
+class Encryption:
+	def __init__(self, key):
+		self.key = key
+	def encode(self, string, key):
+		return string
+	def decode(self, string,key):
+		return string
+
+encryption = Encryption('your key')
 
 class Robot(ircbot.SingleServerIRCBot):
     def __init__(self, name = 'Bot', channel = '#Channel', server = 'irc.wroldnet.net', password = None, port = 7000, ssl =True):
@@ -329,7 +338,7 @@ class Robot(ircbot.SingleServerIRCBot):
         if len(pseudo_list) != 0:
             broadcast_data(server_socket, mess)
     def on_help(self, serv, dest):
-        #info = self.channels[self.__canal]
+        #info = self.channels[self.__channel]
         if dest in self.half_admins and not dest in self.admins+self.superadmins+[self.__name]:
             serv.privmsg(dest,'You can use following command even if they are block for normal user :')
         serv.privmsg(dest,'Accepted commands :')
@@ -359,17 +368,17 @@ class Robot(ircbot.SingleServerIRCBot):
         return self.__name
     def get_server(self):
         return [self.__server,self.__serv]
-    def get_canal(self):
-        return self.__canal
+    def get_chanel(self):
+        return self.__channel
     def __user_mode(self, name):
-        info = self.channels[self.__canal]
+        info = self.channels[self.__channel]
         return ((((('','+')[info.is_voiced(name)],'%')[info.is_halfop(name)],'@')[info.is_oper(name)],\
             '&')[info.is_admin(name)],'~')[info.is_owner(name)]
     def info(self):
         if self.__connected:
-            info = self.channels[self.__canal]
+            info = self.channels[self.__channel]
             delta = datetime.now() - self.wake_up
-            ret = 'Bot name : '+self.__name+'\nConnected on channel :  '+self.__canal+'\nConnected on server : '+self.__server+'\n'+\
+            ret = 'Bot name : '+self.__name+'\nConnected on channel :  '+self.__channel+'\nConnected on server : '+self.__server+'\n'+\
                 ((((('','Bot is voiced !')[info.is_voiced(name)],'Bot is half oper !')[info.is_halfop(name)],\
                 'Bot is oper !')[info.is_oper(name)],'Bot is admin !')[info.is_admin(name)],'Bot is owner !')[info.is_owner(name)]+'\n'+\
                 'Bot is awoken for '+('',str(delta.days)+' day'+('s','')[delta.days<1]+' ')[delta.days > 0]+\
@@ -383,14 +392,14 @@ class Robot(ircbot.SingleServerIRCBot):
     def is_connected(self):
         return self.__connected
     def fonction(self, serv, name, message, author):
-        info = self.channels[self.__canal]
+        info = self.channels[self.__channel]
         if self.fonctions or author in [self.__name]+self.superadmins+self.admins+self.half_admins:
             if message == '!help':
                 self.on_help(serv, author)
             elif message == '!lastkick':
                 if self.lastkick[0] != '':
                     in_time = dateutil.parser.parse(datetime.now().isoformat()[:-7]) - dateutil.parser.parse(self.lastkick[2])
-                    print '<Host> '+self.lastkick[0]+' is the lastkick from '+self.__canal+', he was excluded by '+self.lastkick[3]+\
+                    print '<Host> '+self.lastkick[0]+' is the lastkick from '+self.__channel+', he was excluded by '+self.lastkick[3]+\
                         ' for reason : '+self.lastkick[1]+'; '+((str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60)+' hour'+\
                         ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60 in [0,1]]+' '+\
                         (str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]%60)+' minute'+\
@@ -399,7 +408,7 @@ class Robot(ircbot.SingleServerIRCBot):
                         ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0]%60 in [0,1]]+\
                         ' ')[in_time.seconds < 3599],'')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                         str(in_time.seconds%60)+' seconde'+('s','')[in_time.seconds%60 in [0,1]]+' ago'
-                    serv.privmsg(name, self.lastkick[0]+' is the lastkick from '+self.__canal+', he was excluded by '+self.lastkick[3]+\
+                    serv.privmsg(name, self.lastkick[0]+' is the lastkick from '+self.__channel+', he was excluded by '+self.lastkick[3]+\
                         ' for reason : '+self.lastkick[1]+'; '+((str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60)+' hour'+\
                         ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60 in [0,1]]+' '+\
                         (str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]%60)+' minute'+\
@@ -409,7 +418,7 @@ class Robot(ircbot.SingleServerIRCBot):
                         ' ')[in_time.seconds < 3599],'')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                         str(in_time.seconds%60)+' seconde'+('s','')[in_time.seconds%60 in [0,1]]+' ago')
                     if len(pseudo_list) != 0:
-                        broadcast_data(server_socket, '\r<Host> '+self.lastkick[0]+' is the lastkick from '+self.__canal+', he was excluded by '+self.lastkick[3]+\
+                        broadcast_data(server_socket, '\r<Host> '+self.lastkick[0]+' is the lastkick from '+self.__channel+', he was excluded by '+self.lastkick[3]+\
                             ' for reason : '+self.lastkick[1]+'; '+((str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60)+' hour'+\
                             ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60 in [0,1]]+' '+\
                             (str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]%60)+' minute'+\
@@ -419,7 +428,7 @@ class Robot(ircbot.SingleServerIRCBot):
                             ' ')[in_time.seconds < 3599],'')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                             str(in_time.seconds%60)+' seconde'+('s','')[in_time.seconds%60 in [0,1]]+' ago\n')
                     else:
-                        self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <Host> '+self.lastkick[0]+' is the lastkick from '+self.__canal+', he was excluded by '+self.lastkick[3]+\
+                        self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <Host> '+self.lastkick[0]+' is the lastkick from '+self.__channel+', he was excluded by '+self.lastkick[3]+\
                             ' for reason : '+self.lastkick[1]+'; '+((str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60)+' hour'+\
                             ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0]/60 in [0,1]]+' '+\
                             (str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0]%60)+' minute'+\
@@ -607,8 +616,8 @@ class Robot(ircbot.SingleServerIRCBot):
                             self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <'+name+'> no such result in Newbie for '+_name+'\n')
             if author in [self.__name]+self.superadmins+self.admins:
                 if message.split(' ')[0] == '!superadminofthedeath' and not author in self.admins:
-                    serv.primsg(canal,'Do you think this commande realy exist ?')
-                elif message == '!info' and self.channels.__contains__(self.__canal):
+                    serv.primsg(channel,'Do you think this commande realy exist ?')
+                elif message == '!info' and self.channels.__contains__(self.__channel):
                     serv.privmsg(author,self.info())
                 elif message == '!stats':
                     for _name in stat:
@@ -618,20 +627,20 @@ class Robot(ircbot.SingleServerIRCBot):
                                 item[:-1]+('s','')[stat[_name][item]==1] for item in stat[_name] if item in stats])
                 elif message == '!order66':
                     cible = ' '.join(info.users()).split(' ')[random.randint(0,len(info.users())-1)]
-                    serv.action(self.__canal, 'execute order 66')
+                    serv.action(self.__channel, 'execute order 66')
                     if len(pseudo_list) != 0:
-                        broadcast_data(server_socket, '\r<'+self.__canal+'> *'+self.__name+' execute order 66*\n')
+                        broadcast_data(server_socket, '\r<'+self.__channel+'> *'+self.__name+' execute order 66*\n')
                     else:
-                        self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <'+self.__canal+'> *'+self.__name+' execute order 66*\n')
-                    print '<'+self.__canal+'> *'+self.__name+' execute order 66*'
-                    info = self.channels[self.__canal]
+                        self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <'+self.__channel+'> *'+self.__name+' execute order 66*\n')
+                    print '<'+self.__channel+'> *'+self.__name+' execute order 66*'
+                    info = self.channels[self.__channel]
                     if cible in info.users() and not info.is_owner(cible) and not info.is_admin(cible) and not info.is_oper(cible):
-                        serv.kick(self.__canal,name,'take a blaster and open fire')
+                        serv.kick(self.__channel,name,'take a blaster and open fire')
 
                     else:
-                        serv.action(self.__canal, 'take a blaster, but con\'t open fire on '+cible)
-                        broadcast_data(server_socket, '\r<'+self.__canal+'> *'+self.__name+' take a blaster, but can\'t open fire on '+cible+'*\n')
-                        print '<'+self.__canal+'> *'+self.__name+' take a blaster, but con\'t open fire on '+cible+'*'
+                        serv.action(self.__channel, 'take a blaster, but con\'t open fire on '+cible)
+                        broadcast_data(server_socket, '\r<'+self.__channel+'> *'+self.__name+' take a blaster, but can\'t open fire on '+cible+'*\n')
+                        print '<'+self.__channel+'> *'+self.__name+' take a blaster, but con\'t open fire on '+cible+'*'
                 elif message == '!halfadmins':
                     if len(self.admins) != 0:
                         if len(pseudo_list) != 0:
@@ -815,7 +824,7 @@ class Robot(ircbot.SingleServerIRCBot):
                         else:
                             self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <Host> Fonctions are '+('off','on')[self.fonctions]+'\n')
                         print '<Host> Fonctions are',('off','on')[self.fonctions]
-                        serv.privmsg(self.__canal, 'Fonctions are '+('off','on')[self.fonctions])
+                        serv.privmsg(self.__channel, 'Fonctions are '+('off','on')[self.fonctions])
                     elif message.split(' ')[1] in ['on','off']:
                         if ('off','on')[self.fonctions] == message.split(' ')[1]:
                             if len(pseudo_list) != 0:
@@ -823,7 +832,7 @@ class Robot(ircbot.SingleServerIRCBot):
                             else:
                                 self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <Host> Fonctions are already '+('off','on')[self.fonctions]+'\n')
                             print '<Host> Fonctions are already',('off','on')[self.fonctions]
-                            serv.privmsg(self.__canal, 'Fonctions are already '+('off','on')[self.fonctions])
+                            serv.privmsg(self.__channel, 'Fonctions are already '+('off','on')[self.fonctions])
                         else:
                             self.fonctions = (False,True)[message[1:-1].split(' ')[1] == 'on']
                             if len(pseudo_list) != 0:
@@ -831,7 +840,7 @@ class Robot(ircbot.SingleServerIRCBot):
                             else:
                                 self.history.append('\r('+datetime.now().isoformat()[:-7].replace('T',' ')+') <Host> Fonctions are '+('off','on')[self.fonctions]+'\n')
                             print '<Host> Fonctions are',('off','on')[self.fonctions]
-                            serv.privmsg(self.__canal, 'Fonctions are '+('off','on')[self.fonctions])
+                            serv.privmsg(self.__channel, 'Fonctions are '+('off','on')[self.fonctions])
                     else:
                         print 'Unkown option for !fonction'
                         serv.privmsg(author,'Unkown option for !fonction')
@@ -847,7 +856,7 @@ class Robot(ircbot.SingleServerIRCBot):
                         self.away_message = ''
                     print '\033[1;32mself '+('get back','come away')[self.away]+' (by '+author+')'+(' ('+self.away_message+')','')[len(self.away_message)==0]+'\033[0m'
                     serv.privmsg(author, 'Yes master, I '+('get back','come away')[self.away]+(' for reason : '+self.away_message,'')[len(self.away_message)==0])
-                    serv.privmsg(self.__canal, 'self '+('get back','come away')[self.away]+(' for reason : '+self.away_message,'')[len(self.away_message)==0])
+                    serv.privmsg(self.__channel, 'self '+('get back','come away')[self.away]+(' for reason : '+self.away_message,'')[len(self.away_message)==0])
                     if len(pseudo_list) != 0:
                         broadcast_data(server_socket,'\r<Host> self '+('get back','come away')[self.away]+' (by '+author+(' for reason : '+self.away_message,'')[len(self.away_message)==0]+')\n')
                     else:
@@ -959,7 +968,7 @@ class lancheur(Thread):
                                 if data:
                                     for socket in pseudo_list:
                                         if socket[0] == sock and socket[2] == 0:
-											name = encryption.decode(data,key)
+						name = encryption.decode(data,key)
                                             if name in admin_list:
                                                 socket[1] = name
                                                 socket.append(2)
@@ -1027,12 +1036,12 @@ class lancheur(Thread):
                                                     socket[0].send(mess)
                                                     if robot.wake_up.day - robot.last_stop.day > 0 and len(pseudo_list) == 1:
                                                         print '<Host> Auto Zbra'
-                                                        robot.get_server()[1].privmsg(robot.get_canal(), 'Zbra')
+                                                        robot.get_server()[1].privmsg(robot.get_channel(), 'Zbra')
                                                         mess = encryption.encode('\r<Host> Auto Zbra\n',key)
                                                         socket[0].send(mess)
                                                     elif len(pseudo_list) == 1 and autore:
                                                         print 'Auto Re'
-                                                        robot.get_server()[1].privmsg(robot.get_canal(), 'Re')
+                                                        robot.get_server()[1].privmsg(robot.get_channel(), 'Re')
                                                         mess = encryption.encode('\r<Host> Auto Re\n',key)
                                                         socket[0].send(mess)
                                                 elif socket[3] != 0:
@@ -1106,7 +1115,7 @@ class lancheur(Thread):
                                                 pass
                                             elif mess[0] != '!':
                                                 broadcast_data(sock, '\r<' + socket[1] +'> '+mess)
-                                                robot.get_server()[1].privmsg(robot.get_canal(),mess)
+                                                robot.get_server()[1].privmsg(robot.get_channel(),mess)
                                                 stat[robot.get_name()].update({'messages':stat[robot.get_name()]['messages']+1})
                                                 stat[robot.get_name()].update({'words':stat[robot.get_name()]['words']+len(mess[:-1].split(' '))})
                                                 stat[robot.get_name()].update({'letters':stat[robot.get_name()]['letters']+len(mess)-mess[:-1].count(' ')-2})
@@ -1179,7 +1188,7 @@ class lancheur(Thread):
                                                         robot.last_stop = datetime.now()
                                                         if not robot.away and autoaway:
                                                             robot.away == True
-                                                            robot.get_server()[1].action(robot.get_canal(),'is away')
+                                                            robot.get_server()[1].action(robot.get_channel(),'is away')
                                                             print '\033[1;32mRobot come away\033[0m'
                                                 elif mess[1:-1] == 'help':
                                                     mess = encryption.encode(\
@@ -1212,11 +1221,11 @@ class lancheur(Thread):
                                                         '\t- "!fonction [on|off]" : Change status of bot\'s fonctions\n'+\
                                                         '\t- "!msg <pseudo> <message>" : send <message in private to <pseudo>\n'+\
                                                         '\t- "!robot <message>" : robot do <message> in IRC\n'+\
-                                                        '\t- "!change <canal>" : change the canal of the bot to the given one\n'+\
+                                                        '\t- "!change <channel>" : change the channel of the bot to the given one\n'+\
                                                         '\t- "!topurl< pseudo>*" : Give top 10 of url, if no pseudo it\'s global top\n'+\
                                                         '\t- "!stat( <pseudo>)*" : Give stats of pseudo list, if none give yours\n'+\
                                                         '\t- "!stats" : Give all stats ! (the list could be long !)\n'+\
-                                                        '\t- "!status" : Give stats of the canal (equal to !connect but each status is describe)\n'+\
+                                                        '\t- "!status" : Give stats of the channel (equal to !connect but each status is describe)\n'+\
                                                         '\t- /!\\ "!quit" : as admin use quit close the serveur /!\\\n',key)
                                                     socket[0].send(mess)
                                                     robot.get_server()[1].privmsg(robot.get_name(),'!help')
@@ -1224,11 +1233,11 @@ class lancheur(Thread):
                                                     msg = encryption.encode('\r<Host> '+robot.info()+'\n',key)
                                                     socket[0].send(msg)
                                                 elif mess[1:-1] == 'lastkick':
-                                                    robot.get_server()[1].privmsg(robot.get_canal(),mess[:-1])
-                                                    robot.fonction(robot.get_server()[1],robot.get_canal(),mess[:-1],robot.get_name())
+                                                    robot.get_server()[1].privmsg(robot.get_channel(),mess[:-1])
+                                                    robot.fonction(robot.get_server()[1],robot.get_channel(),mess[:-1],robot.get_name())
                                                 elif mess[1:-1] == 'applause':
                                                     broadcast_data(sock, '\r<'+socket[1]+'> *'+robot.get_name()+' *\n')
-                                                    robot.get_server()[1].action(robot.get_canal(),'applause')
+                                                    robot.get_server()[1].action(robot.get_channel(),'applause')
                                                     stat[robot.get_name()].update({'messages':stat[robot.get_name()]['messages']+1})
                                                     stat[robot.get_name()].update({'words':stat[robot.get_name()]['words']+1})
                                                     stat[robot.get_name()].update({'letters':stat[robot.get_name()]['letters']+8})
@@ -1242,7 +1251,7 @@ class lancheur(Thread):
                                                     else:
                                                         robot.away_message = ''
                                                     broadcast_data(server_socket,'\r<Host> Robot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away]+'\n')
-                                                    robot.get_server()[1].action(robot.get_canal(),('come back','is away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away])
+                                                    robot.get_server()[1].action(robot.get_channel(),('come back','is away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away])
                                                     print '\033[1;32mRobot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0]+'\033[0m')[robot.away]
                                                 elif mess[1:-1].split(' ')[0] == 'kick':
                                                     for name in mess[1:-1].split(' ')[1:]:
@@ -1302,7 +1311,7 @@ class lancheur(Thread):
                                                 elif mess[1:-1].split(' ')[0] == 'robot':
                                                     broadcast_data(sock, '\r<'+socket[1]+'> *'+robot.get_name()+' '+\
                                                         mess[1:-1].split(' ',1)[1]+'*\n')
-                                                    robot.get_server()[1].action(robot.get_canal(),mess[1:-1].split(' ',1)[1])
+                                                    robot.get_server()[1].action(robot.get_channel(),mess[1:-1].split(' ',1)[1])
                                                     stat[robot.get_name()].update({'messages':stat[robot.get_name()]['messages']+1})
                                                     stat[robot.get_name()].update({'words':stat[robot.get_name()]['words']+len(mess[:-1].split(' '))-1})
                                                     stat[robot.get_name()].update({'letters':stat[robot.get_name()]['letters']+len(mess)-mess[:-1].count(' ')-9})
@@ -1311,11 +1320,11 @@ class lancheur(Thread):
                                                     robot.get_server()[1].disconnect('leave')
                                                     robot.get_server()[1].join(mess[1:-1].split(' ')[1])
                                                 elif mess[1:-1].split(' ')[0] == 'vdm':
-                                                    robot.get_server()[1].privmsg(robot.get_canal(),mess[:-1])
-                                                    robot.fonction(robot.get_server()[1],robot.get_canal(),mess[:-1],robot.get_name())
+                                                    robot.get_server()[1].privmsg(robot.get_channel(),mess[:-1])
+                                                    robot.fonction(robot.get_server()[1],robot.get_channel(),mess[:-1],robot.get_name())
                                                 elif mess[1:-1].split(' ')[0] == 'dtc':
-                                                    robot.get_server()[1].privmsg(robot.get_canal(),mess[:-1])
-                                                    robot.fonction(robot.get_server()[1],robot.get_canal(),mess[:-1],robot.get_name())
+                                                    robot.get_server()[1].privmsg(robot.get_channel(),mess[:-1])
+                                                    robot.fonction(robot.get_server()[1],robot.get_channel(),mess[:-1],robot.get_name())
                                                 elif mess[1:-1].split(' ')[0] == 'cronvdm':
                                                     if mess[1:-1] == 'cronvdm':
                                                         broadcast_data(server_socket,'\r<Host> Cronvdm is '+('off','on')[not cronvdm.stop]+'\n')
@@ -1397,8 +1406,8 @@ class lancheur(Thread):
                                                         print 'Unkown option for !crondtc'
                                                         socket[0].send(encryption.encode('\r<Host> Unkown option for !crondtc\n',key))
                                                 elif mess[1:-1].split(' ')[0] == 'score':
-                                                    robot.get_server()[1].privmsg(robot.get_canal(),mess[:-1])
-                                                    robot.fonction(robot.get_server()[1],robot.get_canal(),mess[:-1],robot.get_name())		
+                                                    robot.get_server()[1].privmsg(robot.get_channel(),mess[:-1])
+                                                    robot.fonction(robot.get_server()[1],robot.get_channel(),mess[:-1],robot.get_name())		
                                                 elif mess[1:-1].split(' ')[0] == 'autoaway':
                                                     if mess[1:-1] == 'autoaway':
                                                         broadcast_data(server_socket,'\r<Host> Autoaway is '+('off','on')[autoaway]+'\n')
@@ -1456,7 +1465,7 @@ class lancheur(Thread):
                                                             robot.fonctions = (False,True)[mess[1:-1].split(' ')[1] == 'on']
                                                             broadcast_data(server_socket,'\r<Host> Fonctions are '+('off','on')[robot.fonctions]+'\n')
                                                             print '<Host> Fonctions are',('off','on')[robot.fonctions]
-                                                            robot.get_server()[1].privmsg(robot.get_canal(), 'Fonctions are '+('off','on')[robot.fonctions])
+                                                            robot.get_server()[1].privmsg(robot.get_channel(), 'Fonctions are '+('off','on')[robot.fonctions])
                                                     else:
                                                         print 'Unkown option for !fonction'
                                                         socket[0].send(encryption.encode('\r<Host> Unkown option for !fonction\n',key))
@@ -1513,7 +1522,7 @@ class lancheur(Thread):
                                                                 item[:-1]+('s','')[stat[_name][item]==1] for item in stat[_name] if item in stats])
                                                 elif mess[1:-1].split(' ')[0] == 'status' :
                                                     if mess[1:-1] == 'status':
-                                                        info = robot.channels[robot.get_canal()]
+                                                        info = robot.channels[robot.get_channel()]
                                                         broadcast_data(server_socket, '\r<Host> '+\
                                                             ('Owners connected : '+', '.join(info.owners())+'\n','')[len(info.owners()) == 0]+\
                                                             ('Admins connected : '+', '.join(info.admins())+'\n','')[len(info.admins()) == 0]+\
@@ -1521,7 +1530,7 @@ class lancheur(Thread):
                                                             ('Half opers connected : '+', '.join(info.halfops())+'\n','')[len(info.halfops()) == 0]+\
                                                             ('Voiced connected : '+', '.join(info.voiced())+'\n','')[len(info.voiced()) == 0]+\
                                                             ('Users connected : '+', '.join(info.users())+'\n','')[len(info.users()) == 0])
-                                                        print '<Host> Information from canal : '+robot.get_canal()+\
+                                                        print '<Host> Information from channel : '+robot.get_channel()+\
                                                             ('Owners connected : '+', '.join(info.owners())+'\n','')[len(info.owners()) == 0]+\
                                                             ('Opers connected : '+', '.join(info.opers())+'\n','')[len(info.opers()) == 0]+\
                                                             ('Admins connected : '+', '.join(info.admins())+'\n','')[len(info.admins()) == 0]+\
@@ -1529,17 +1538,17 @@ class lancheur(Thread):
                                                             ('Voiced connected : '+', '.join(info.voiced())+'\n','')[len(info.voiced()) == 0]+\
                                                             ('Users connected : '+', '.join(info.users()),'')[len(info.users()) == 0]
                                                     else:
-                                                        for _canal in mess[1:-1].split(' ')[1:]:
+                                                        for _channel in mess[1:-1].split(' ')[1:]:
                                                             try:
-                                                                info = robot.channels[_canal]
-                                                                broadcast_data(server_socket, '\r<Host> Info from canal : '+_canal+\
+                                                                info = robot.channels[_channel]
+                                                                broadcast_data(server_socket, '\r<Host> Info from channel : '+_channel+\
                                                                     ('Owners connected : '+', '.join(info.owners())+'\n','')[len(info.owners()) == 0]+\
                                                                     ('Admins connected : '+', '.join(info.admins())+'\n','')[len(info.admins()) == 0]+\
                                                                     ('Opers connected : '+', '.join(info.opers())+'\n','')[len(info.opers()) == 0]+\
                                                                     ('Half opers connected'+', '.join(info.halfops())+'\n','')[len(info.halfops()) == 0]+\
                                                                     ('Voiced connected'+', '.join(info.voiced())+'\n','')[len(info.voiced()) == 0]+\
                                                                     ('Users connected'+', '.join(info.users())+'\n','')[len(info.users()) == 0])
-                                                                print '<Host> Information from canal : '+_canal+\
+                                                                print '<Host> Information from channel : '+_channel+\
                                                                     ('Owners connected : '+', '.join(info.owners())+'\n','')[len(info.owners()) == 0]+\
                                                                     ('Opers connected : '+', '.join(info.opers())+'\n','')[len(info.opers()) == 0]+\
                                                                     ('Admins connected : '+', '.join(info.admins())+'\n','')[len(info.admins()) == 0]+\
@@ -1547,12 +1556,12 @@ class lancheur(Thread):
                                                                     ('Voiced connected'+', '.join(info.voiced())+'\n','')[len(info.voiced()) == 0]+\
                                                                     ('Users connected'+', '.join(info.users()),'')[len(info.users()) == 0]
                                                             except:
-                                                                broadcast_data(server_socket, '\r<Host> No Info from channel : '+_canal+'\n')
+                                                                broadcast_data(server_socket, '\r<Host> No Info from channel : '+_channel+'\n')
                                                 elif mess[1:-1].split(' ')[0] == 'slap' :
                                                     for name in mess[1:-1].split(' ')[1:]:
-                                                        robot.get_server()[1].action(robot.get_canal(),'slaps '+name+' around a bit with a large trout')
-                                                        broadcast_data(server_socket, '\r<'+robot.get_canal()+'> *'+robot.get_name()+' slaps '+name+' around a bit with a large trout*\n')
-                                                        print '<'+robot.get_canal()+'> *'+robot.get_name()+'slaps '+name+' around a bit with a large trout*'
+                                                        robot.get_server()[1].action(robot.get_channel(),'slaps '+name+' around a bit with a large trout')
+                                                        broadcast_data(server_socket, '\r<'+robot.get_channel()+'> *'+robot.get_name()+' slaps '+name+' around a bit with a large trout*\n')
+                                                        print '<'+robot.get_channel()+'> *'+robot.get_name()+'slaps '+name+' around a bit with a large trout*'
                                                 elif mess[1:-1].split(' ')[0] == 'admin' and len(mess[1:-1].split(' ')) > 1 :
                                                     for name in mess[1:-1].split(' ')[1:]:
                                                         if name != '':
@@ -1591,7 +1600,7 @@ class lancheur(Thread):
                                                             ' not half admin'+('s','')[len(temp_H)==1]+' now'
                                                 else:
                                                     broadcast_data(sock, '\r<' + socket[1] +'> '+mess)
-                                                    robot.get_server()[1].privmsg(robot.get_canal(),mess[:-1])
+                                                    robot.get_server()[1].privmsg(robot.get_channel(),mess[:-1])
                                                     stat[robot.get_name()].update({'messages':stat[robot.get_name()]['messages']+1})
                                                     stat[robot.get_name()].update({'words':stat[robot.get_name()]['words']+len(mess[:-1].split(' '))})
                                                     stat[robot.get_name()].update({'letters':stat[robot.get_name()]['letters']+len(mess)-mess[:-1].count(' ')-1})
@@ -1608,7 +1617,7 @@ class lancheur(Thread):
                                         robot.last_stop = datetime.now()
                                         if not robot.away and autoaway:
                                             robot.away == True
-                                            robot.get_server()[1].action(robot.get_canal(),' is away')
+                                            robot.get_server()[1].action(robot.get_channel(),' is away')
                                             print '\033[1;32mRobot come away\033[0m'
                         except KeyboardInterrupt:
                             for item in pseudo_list:
@@ -1628,7 +1637,7 @@ class lancheur(Thread):
                                     robot.last_stop = datetime.now()
                                     if not robot.away and autoaway:
                                         robot.away == True
-                                        robot.get_server()[1].action(robot.get_canal(),'is away')
+                                        robot.get_server()[1].action(robot.get_channel(),'is away')
                                         print '\033[1;32mRobot come away\033[0m'
                             else:
                                 print '\033[1;33mClient (',item[1],', %s, %s) close (forced to quit during establishment) !\033[0m' % addr
@@ -1675,10 +1684,10 @@ class lancheur(Thread):
                     while datetime.now().isoformat()[:-8] != _next and not self.stop and not self.end:
                         time.sleep(3)
                     if not self.stop and robot.is_connected():
-                        robot.get_server()[1].privmsg(robot.get_canal(),'Programmed VDM !')
+                        robot.get_server()[1].privmsg(robot.get_channel(),'Programmed VDM !')
                         broadcast_data(server_socket,'\r<Host> Programmed VDM !\n')
                         print '<Host> Programmed VDM !'
-                        robot.fonction(robot.get_server()[1],robot.get_canal(),'!vdm',robot.get_name())
+                        robot.fonction(robot.get_server()[1],robot.get_channel(),'!vdm',robot.get_name())
                 time.sleep(3)
         elif self.fonction == 'crondtc':
             while not self.end:
@@ -1687,10 +1696,10 @@ class lancheur(Thread):
                     while datetime.now().isoformat()[:-8] != _next and not self.stop and not self.end:
                         time.sleep(3)
                     if not self.stop and robot.is_connected():
-                        robot.get_server()[1].privmsg(robot.get_canal(),'Programmed DTC !')
+                        robot.get_server()[1].privmsg(robot.get_channel(),'Programmed DTC !')
                         broadcast_data(server_socket,'\r<Host> Programmed DTC !\n')
                         print '<Host> Programmed DTC !'
-                        robot.fonction(robot.get_server()[1],robot.get_canal(),'!dtc',robot.get_name())
+                        robot.fonction(robot.get_server()[1],robot.get_channel(),'!dtc',robot.get_name())
                 time.sleep(3)
         else:
             print '\033[1;31mFunction unkown, programm stop\033[0m'
@@ -1831,59 +1840,59 @@ if __name__ == "__main__":
     server = ''
     if '-s' in sys.argv and (len(sys.argv)-1)-sys.argv.index('-s') > 0:
         server =  sys.argv[sys.argv.index('-s')+1]
-    canal = ''
+    channel = ''
     if '-c' in sys.argv and (len(sys.argv)-1)-sys.argv.index('-c') > 0:
-        canal = sys.argv[sys.argv.index('-c')+1]
+        chanel = sys.argv[sys.argv.index('-c')+1]
     password = ''
     if '-p' in sys.argv and (len(sys.argv)-1)-sys.argv.index('-p') > 0:
         password = sys.argv[sys.argv.index('-p')+1]
-    if name != '' and canal != '' and server != '' and password != '':
-        robot = LeRobot(name,canal,server,password)
-        print ('\033[1;33mrobot get name ('+name+'), canal ('+canal+') and server ('+server+') and password ('+password+')!\033[0m')
-    elif name != '' and canal != '' and server != '':
-        robot = LeRobot(name,canal,server)
-        print ('\033[1;33mrobot get name ('+name+'), canal ('+canal+') and server ('+server+')!\033[0m')
-    elif name != '' and canal != '' and password != '':
-        robot = LeRobot(name,canal,password=password)
-        print '\033[1;33mrobot get name ('+name+') and canal ('+canal+') and password ('+password+')!\033[0m'
-    elif name != '' and canal != '':
-        robot = LeRobot(name,canal)
-        print '\033[1;33mrobot get name ('+name+') and canal ('+canal+')!\033[0m'
-    elif canal != '' and server != '' and password != '':
-        robot = LeRobot(canal=canal,server=server,password=password)
-        print '\033[1;33mrobot get canal ('+canal+') and server ('+server+') and password ('+password+')!\033[0m'
-    elif canal != '' and server != '':
-        robot = LeRobot(canal=canal,server=server)
-        print '\033[1;33mrobot get canal ('+canal+') and server ('+server+')!\033[0m'
+    if name != '' and channel != '' and server != '' and password != '':
+        robot = Robot(name,channel,server,password)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+') and server ('+server+') and password ('+password+')!\033[0m')
+    elif name != '' and channel != '' and server != '':
+        robot = Robot(name,channel,server)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+') and server ('+server+')!\033[0m')
+    elif name != '' and channel != '' and password != '':
+        robot = Robot(name,channel,password=password)
+        print '\033[1;33mrobot get name ('+name+') and channel ('+channel+') and password ('+password+')!\033[0m'
+    elif name != '' and channel != '':
+        robot = Robot(name,channel)
+        print '\033[1;33mrobot get name ('+name+') and channel ('+channel+')!\033[0m'
+    elif channel != '' and server != '' and password != '':
+        robot = Robot(channel=channel,server=server,password=password)
+        print '\033[1;33mrobot get channel ('+channel+') and server ('+server+') and password ('+password+')!\033[0m'
+    elif channel != '' and server != '':
+        robot = Robot(channel=channel,server=server)
+        print '\033[1;33mrobot get channel ('+channel+') and server ('+server+')!\033[0m'
     elif name != '' and server != '' and password != '':
-        robot = LeRobot(name=name,server=server,password=password)
+        robot = Robot(name=name,server=server,password=password)
         print '\033[1;33mrobot get name ('+name+') and serveur ('+server+') and password ('+password+')!\033[0m'
     elif name != '' and server != '':
-        robot = LeRobot(name=name,server=server)
+        robot = Robot(name=name,server=server)
         print '\033[1;33mrobot get name ('+name+') and serveur ('+server+')!\033[0m'
     elif name != '' and password != '':
-        robot = LeRobot(name=name,password=password)
+        robot = Robot(name=name,password=password)
         print '\033[1;33mrobot get name ('+name+') and password ('+password+')!\033[0m'
-    elif canal != '' and password != '':
-        robot = LeRobot(canal=canal,password=password)
-        print '\033[1;33mrobot get canal ('+canal+') and password ('+password+')!\033[0m'
+    elif channel != '' and password != '':
+        robot = Robot(channel=channel,password=password)
+        print '\033[1;33mrobot get channel ('+channel+') and password ('+password+')!\033[0m'
     elif server != '' and password != '':
-        robot = LeRobot(server=server,password=password)
+        robot = Robot(server=server,password=password)
         print '\033[1;33mrobot get server ('+server+') and password ('+password+')!\033[0m'
     elif name != '':
-        robot = LeRobot(name=name)
+        robot = Robot(name=name)
         print '\033[1;33mrobot get a name ('+name+')!\033[0m'
-    elif canal != '':
-        robot = LeRobot(canal=canal)
-        print '\033[1;33mrobot get a canal ('+canal+')!\033[0m'
+    elif channel != '':
+        robot = Robot(channel=channel)
+        print '\033[1;33mrobot get a channel ('+channel+')!\033[0m'
     elif server != '':
-        robot = LeRobot(server=server)
+        robot = Robot(server=server)
         print '\033[1;33mrobot get a server ('+server+')!\033[0m'
     elif password != '':
-        robot = LeRobot(password=password)
+        robot = Robot(password=password)
         print '\033[1;33mrobot get a password ('+password+')!\033[0m'
     else:
-        robot = LeRobot()
+        robot = Robot()
         print '\033[1;33mrobot has default value !\033[0m'
     if config.defaults().has_key('time_stop'):
         robot.last_stop = dateutil.parser.parse(config.defaults()['time_stop'])
