@@ -1,0 +1,6 @@
+[DEFAULT]
+words = 0
+letters = 0
+messages = 0
+urls = []
+all_url = []
