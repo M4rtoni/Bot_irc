@@ -1060,7 +1060,8 @@ class MyCmd(cmd.Cmd):
         else:
             robot.away_message = ''
         robot.get_server()[1].action(robot.get_channel(),('come back','is away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away])
-        print '\r<\033['+PROMPT['%host%']+'mHost,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> \033[0;32mRobot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away]+'\033[0m'
+        print '\r<\033['+PROMPT['%host%']+'mHost,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+        	'\033[0m> \033[0;32mRobot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away]+'\033[0m'
     def complete_away(self, *ignored):
         pass
     def do_help(self, arg):
@@ -1173,7 +1174,8 @@ class MyCmd(cmd.Cmd):
         elif line == 'next':
             test = cronvdm._iter.get_prev(datetime)
             in_time = dateutil.parser.parse(cronvdm._iter.get_next(datetime).isoformat()) - dateutil.parser.parse(datetime.now().isoformat().split('.')[0])
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Next auto vdm is in '+(str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0])+' minute'+\
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+            	'\033[0m> Next auto vdm is in '+(str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0])+' minute'+\
                 ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] in [0,1]]+' ','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                 str(divmod(in_time.days * 86400 + in_time.seconds, 60)[1])+' seconde'+('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[1] in [0,1]]
         elif line.split(' ')[0] in ['on','off'] and len(line.split(' ')) == 1:
@@ -1286,16 +1288,20 @@ class MyCmd(cmd.Cmd):
         Info : Change status of bot's fonctions
         """
         if line == '':
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Fonctions are '+('off','on')[robot.fonctions]
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+            	'\033[0m> Fonctions are '+('off','on')[robot.fonctions]
         elif line.split(' ')[0] in ['on','off']:
             if ('off','on')[robot.fonctions] == line.split(' ')[0]:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Fonctions are '+('off','on')[robot.fonctions]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                	'\033[0m> Fonctions are '+('off','on')[robot.fonctions]
             else:
                 robot.fonctions = (False,True)[line.split(' ')[0] == 'on']
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Fonctions are',('off','on')[robot.fonctions]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                	'\033[0m> Fonctions are',('off','on')[robot.fonctions]
                 robot.get_server()[1].privmsg(robot.get_channel(), 'Fonctions are '+('off','on')[robot.fonctions])
         else:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Unkown option for !fonction'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+            	'\033[0m> Unkown option for !fonction'
     def complete_fonction(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1367,7 +1373,8 @@ class MyCmd(cmd.Cmd):
             for _channel in line.split(' '):
                 try:
                     info = robot.channels[_channel]
-                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Information from channel : '+_channel+\
+                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    	'\033[0m> Information from channel : '+_channel+\
                         ('Owners connected : '+', '.join(info.owners())+'\n','')[len(info.owners()) == 0]+\
                         ('Opers connected : '+', '.join(info.opers())+'\n','')[len(info.opers()) == 0]+\
                         ('Admins connected : '+', '.join(info.admins())+'\n','')[len(info.admins()) == 0]+\
@@ -1375,7 +1382,8 @@ class MyCmd(cmd.Cmd):
                         ('Voiced connected'+', '.join(info.voiced())+'\n','')[len(info.voiced()) == 0]+\
                         ('Users connected'+', '.join(info.users()),'')[len(info.users()) == 0]
                 except:
-                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> No Info from channel : '+_channel
+                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    	'\033[0m> No Info from channel : '+_channel
     def complete_status(self, *ignored):
         pass
     def do_slap(self, line):
@@ -1384,7 +1392,8 @@ class MyCmd(cmd.Cmd):
         """
         for name in line.split(' '):
             robot.get_server()[1].action(robot.get_channel(),'slaps '+name+' around a bit with a large trout')
-            print '\r<\033['+PROMPT['%channel%']+'m'+robot.get_channel()+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> *'+robot.get_name()+'slaps '+name+' around a bit with a large trout*'
+            print '\r<\033['+PROMPT['%channel%']+'m'+robot.get_channel()+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+            	'\033[0m> *'+robot.get_name()+'slaps '+name+' around a bit with a large trout*'
     def complete_slap(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1400,8 +1409,9 @@ class MyCmd(cmd.Cmd):
         for name in line.split(' '):
             if name != '':
                 robot.admins.append(name)
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
-                    ' admin'+('s','')[len(line.split(' '))==1]+' now'
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                	'\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
+                	' admin'+('s','')[len(line.split(' '))==1]+' now'
     def complete_admin(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1417,7 +1427,8 @@ class MyCmd(cmd.Cmd):
         for name in line.split(' '):
             if name != '':
                 robot.half_admins.append(name)
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+            	'\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
                 ' half admin'+('s','')[len(line.split(' '))==1]+' now'
     def complete_halfadmin(self, text, line, start_index, end_index):
         if text:
@@ -1470,15 +1481,18 @@ class MyCmd(cmd.Cmd):
         Info : Give top 10 of url, if no pseudo it's global top
         """
         if len(mess[1:-1].split(' ')) == 1:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+            	'\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
                 ' at '+item[2][:-3].replace('T',' ') for item in robot.all_url[:10]])
         else:
             for _name in mess[1:-1].split(' ')[1:]:
                 try:
-                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
+                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    	'\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
                         ' at '+item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:10]])
                 except:
-                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Error process abord !'
+                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    	'\033[0m> Error process abord !'
     def complete_topurl(self, line):
         if text:
             return [
