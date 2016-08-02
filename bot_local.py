@@ -1587,9 +1587,10 @@ if __name__ == "__main__":
     if '-p' in sys.argv and (len(sys.argv)-1)-sys.argv.index('-p') > 0:
         password = sys.argv[sys.argv.index('-p')+1]
     if '--prompt' in sys.argv and (len(sys.argv)-1)-sys.argv.index('--prompt') > 0:
-        PROMPT = {item[1]:item[0] for item in [('0;31', '%host%'), ('0;32', '%time%'), ('0;34', '%channel%'),\
-            ('0;31', '%private%'), ('0;32', '%pseudo%'), ('0;32', '%pseudo_private%'), ('0;33','%pseudo_other%')]+\
-            re.findall('\\033[[]([0-7];?(?:[3-4][0-7])?;?(?:4[0-7])?)m(%(?:host|time|channel|private|pseudo(?:|_private|_other))%)\\033[[]0m',sys.argv[sys.argv.index('--prompt')+1])}
+        PROMPT = {item[1]:item[0] for item in [('0;31', '%host%'), ('1;32', '%time%'), ('1;34', '%channel%'),\
+            ('0;31', '%private%'), ('1;32', '%pseudo%'), ('1;32', '%pseudo_private%'), ('1;33','%pseudo_other%')]+\
+            re.findall('\\033[[]((?:(?:[0-9]|2[1-3]|[3-49][0-7])?;)*(?:[0-9]|2[1-3]|[3-49][0-7])?)m(%(?:host|time|channel|private|pseudo(?:|_private|_other))%)\\033[[]0?m',\
+			sys.argv[sys.argv.index('--prompt')+1])}
     else:
         PROMPT = {'%private%': '0;31', '%host%': '0;31', '%pseudo%': '0;32', '%channel%': '0;34', '%pseudo_private%': '0;32', '%time%': '0;32','%pseudo_other%':'0;33'}
     if name != '' and channel != '' and server != '' and password != '':
