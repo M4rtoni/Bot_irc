@@ -8,6 +8,8 @@ There is two version :
   - direct control : the cmd controlor running over the main program,
   - remote control : with socket you connect to the bot and his connect to the IRC server.
 
+Prefer local control !
+
 You need specefic lib to run bot :
   - ConfigParser and io (load stats)
   - croniter (get cron task for VDM and DTC)
