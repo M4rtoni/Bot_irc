@@ -20,7 +20,7 @@ The bot can get five diffrents agruments :
   - `name` (-n) use to change name of your bot (use has IRC Pseudo, default : `Bot`)
   - `serveur` (-s) use to change serveur (default : `irc.worldnet.net`)
   - `channel` (-c) use to change channel (default : `#Channel`, prefer to wrap with quotes `#` don't pass very well in args) 
-  - `password` (-p) use to add a password (default no password save, note that is in clear)
+  - `password` (-p) use to add a password (default no password save, note that his appear in plaintext)
   - `prompt` (--prompt) use to change default color in your prompt, there are 7 distinct tags (exclusif to `bot_local.py`) :
     - `%host%` in red
     - `%time%` in green
