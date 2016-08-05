@@ -7,15 +7,15 @@
 # Created By        : Florian MAUFRAIS
 # Contact           : florian.maufrais@gmail.com
 # Creation Date     : december  22th, 2015
-# Version           : 1.0
-# Last Change       : august 02th, 2016 at 15:50
+# Version           : 1.0.1
+# Last Change       : august 05th, 2016 at 10:00
 # Last Changed By   : Florian MAUFRAIS
 # Purpose           : This programm use an IRC bot and cmd line interface
 #                     If you find bug or want more information  please contact !
 #
 ################################################################################"""
 
-import select, base64, os, random, md5, sys, re, requests, ConfigParser, io, cmd
+import os, sys, re, cmd, requests, base64, random, md5, ConfigParser, io
 
 from threading import Thread
 from datetime import datetime
@@ -46,95 +46,22 @@ try:
     import pyparsing
     from pyparsing import *
 except ImportError:
-        raise ImportError("You need pyparsing lib !") 
+    raise ImportError("You need pyparsing lib !") 
         
-if sys.version_info[0] == 2:
-    pyparsing.ParserElement.enablePackrat()
 ESC = Literal('\x1b')
 integer = Word(nums)
 escapeSeq = Combine(ESC + '[' + Optional(delimitedList(integer,';')) + oneOf(list(alphas)))
 
 UncolorString = lambda s : Suppress(escapeSeq).transformString(s)
 
-class OptionParser(optparse.OptionParser):
-    def exit(self, status=0, msg=None):
-        self.values._exit = True
-        if msg:
-            print (msg)       
-    def print_help(self, *args, **kwargs):
-        try:
-            print (self._func.__doc__)
-        except AttributeError:
-            pass
-        optparse.OptionParser.print_help(self, *args, **kwargs)
-    def error(self, msg):
-        """error(msg : string)
-
-        Print a usage message incorporating 'msg' to stderr and exit.
-        If you override this in a subclass, it should not return -- it
-        should either exit or raise an exception.
-        """
-        raise optparse.OptParseError(msg)
-        
-def remaining_args(oldArgs, newArgList):
-    pattern = '\s+'.join(re.escape(a) for a in newArgList)
-    matchObj = re.search(pattern, oldArgs)
-    try:
-        return oldArgs[matchObj.start():matchObj.end()]
-    except:
-        return oldArgs
-
-def _attr_get_(obj, attr):
-    try:
-        return getattr(obj, attr)
-    except AttributeError:
-        return None
-
-optparse.Values.get = _attr_get_
-
-options_defined = [] # used to distinguish --options from SQL-style --comments
-
-def options(option_list, arg_desc="arg"):
-    if not isinstance(option_list, list):
-        option_list = [option_list]
-    for opt in option_list:
-        options_defined.append(pyparsing.Literal(opt.get_opt_string()))
-    def option_setup(func):
-        optionParser = OptionParser()
-        for opt in option_list:
-            optionParser.add_option(opt)
-        optionParser.set_usage("%s [options] %s" % (func.__name__[3:], arg_desc))
-        optionParser._func = func
-        def new_func(instance, arg):
-            try:
-                opts, newArgList = optionParser.parse_args(arg.split())
-                newArgs = remaining_args(arg, newArgList)
-                if isinstance(arg, ParsedString):
-                    arg = arg.with_args_replaced(newArgs)
-                else:
-                    arg = newArgs
-            except optparse.OptParseError as e:
-                print (e)
-                optionParser.print_help()
-                return
-            if hasattr(opts, '_exit'):
-                return None
-            result = func(instance, arg, opts)                            
-            return result
-        new_func.__doc__ = '%s\n%s' % (func.__doc__, optionParser.format_help())
-        return new_func
-    return option_setup
-
-pyparsing.ParserElement.setDefaultWhitespaceChars(' \t')
-
 def prompt() :
     import readline
     origline = readline.get_line_buffer()
-    sys.stdout.write(my_cmd.prompt+origline)
+    sys.stdout.write('\r'+my_cmd.prompt+origline)
     sys.stdout.flush()
 
 class Robot(ircbot.SingleServerIRCBot):
-    def __init__(self, name = 'Bot', channel = '#Channel', server = 'irc.worldnet.net', password = None, port = 7000, ssl =True):
+    def __init__(self, name = 'Martoni', channel = '#cyberbullshit', server = 'irc.cocoland.me', password = None, port = 6697, ssl =True):
         self.__name = name
         self.__channel = channel
         self.__server = server
@@ -161,14 +88,14 @@ class Robot(ircbot.SingleServerIRCBot):
         serv.join(self.__channel)
         self.__serv = serv
         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            '\033[0m> \033[0;32mBot is now connect to',self.__server,'!\033[0m'
+            '\033[0m> \033[1;32mBot is now connect to',self.__server,'!\033[0m'
         prompt()
     def on_join(self, serv, ev):
         author = irclib.nm_to_n(ev.source())
         channel = ev.target()
         if author != self.__name:
             info = self.channels[self.__channel]
-            print ('\r<\033['+PROMPT['%channel%']+'m'+channel+'\033[0m> \033[0;32m '+self.__user_mode(author)+author),'enter !\033[0m'
+            print ('\r<\033['+PROMPT['%channel%']+'m'+channel+'\033[0m> \033[1;32m '+self.__user_mode(author)+author),'enter !\033[0m'
             if not name in stat.keys():
                 stat.update({name:{item:0 for item in stats}})
                 stat[author].update({'urls':[]})
@@ -179,14 +106,15 @@ class Robot(ircbot.SingleServerIRCBot):
         else:
             self.__connected = True
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> \033[0;32mJoin',self.__channel,'on',self.__server,'\033[0m'
+                '\033[0m> \033[1;32mJoin',self.__channel,'on',self.__server,'\033[0m'
         prompt()
     def on_pubmsg(self, serv, ev):
         message = ev.arguments()[0]
         author = irclib.nm_to_n(ev.source())
         channel = ev.target()
         info = self.channels[ev.target()]
-        for name in list(set(my_cmd.pseudo) ^ set([pseudo])):
+        mess = message
+        for name in list(set(my_cmd.pseudo) ^ set([self.__name])):
             message.replace(name,'\033['+PROMPT['%pseudo_other%']+'m'+name+'\033[0m')
         print '\r<\033['+PROMPT['%pseudo%']+'m'+self.__user_mode(author)+author+'\033[0m,\033['+PROMPT['%channel%']+'m'+channel+\
             '\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+message
@@ -204,7 +132,7 @@ class Robot(ircbot.SingleServerIRCBot):
             stat[author].update({'words':stat[author]['words']+len(message.split(' '))})
             stat[author].update({'letters':stat[author]['letters']+len(message)-message.count(' ')})
             stat[author].update({'urls':[]})
-        urls = self.__url.findall(message)
+        urls = self.__url.findall(mess)
         if urls:
             for url in urls:
                 urls_user = stat[author]['urls']
@@ -253,7 +181,7 @@ class Robot(ircbot.SingleServerIRCBot):
                     temp[2] = datetime.now().isoformat()[:-7]
                     urls_user = urls_user[:pos]+[temp]+urls_user[pos:]
                 self.all_url = urls_user
-        self.fonction(serv, channel, message, author)
+        self.fonction(serv, channel, mess, author)
         prompt()
     def on_privmsg(self, serv, ev):
         author = irclib.nm_to_n(ev.source())
@@ -287,6 +215,9 @@ class Robot(ircbot.SingleServerIRCBot):
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                         '\033[0m> '+(', '.join(['%s%s' % (self.__user_mode(aut),aut) for aut in info.users()])+\
                         ' are on line !','Only you are on line !')[len(info.users()) <= 1]
+                    for pseudo in info.users():
+                        if not pseudo in my_cmd.pseudo:
+                            my_cmd.pseudo.append(pseudo)
                 elif message.split(' ')[0] == '!kickirc' and self.channels.__contains__(self.__channel) and not self.__user_mode(self.__name) in ['','%','+']:
                     for name in message.split(' ')[1:]:
                         if name in info.users() and not info.is_owner(name) and not info.is_admin(name) and not info.is_oper(name):
@@ -316,12 +247,12 @@ class Robot(ircbot.SingleServerIRCBot):
         message = ev.arguments()[0]
         self.lastkick = [message,ev.arguments()[1],datetime.now().isoformat()[:-7],author]
         print ('\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            '\033[0m> \033[0;32m'+self.__user_mode(author)+author),'kick',message,'from',channel,'!',\
+            '\033[0m> \033[1;32m'+self.__user_mode(author)+author),'kick',message,'from',channel,'!',\
             ('','('+ev.arguments()[1]+')')[len(ev.arguments()) > 1],'\033[0m'
         if message == self.__name:
             serv.join(channel)
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> \033[0;32mBot was kick from',channel,' and reconnect !\033[0m'
+                '\033[0m> \033[1;32mBot was kick from',channel,' and reconnect !\033[0m'
         prompt()
     def on_part(self, serv, ev):
         channel = ev.target()
@@ -545,7 +476,7 @@ class Robot(ircbot.SingleServerIRCBot):
                             lists = [rdm]
                         serv.privmsg(name, result[rdm])
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> Result :',result[rdm]
+                            '\033[0m> ',result[rdm]
                 else:
                     serv.privmsg(name, 'Impossible to contact : VDM ('+page.content.split('<html><body><h1>')[1].split('</h1>')[0]+')')
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
@@ -576,7 +507,7 @@ class Robot(ircbot.SingleServerIRCBot):
                             lists = [rdm]
                         for element in result[rdm].split('\n'):
                             serv.privmsg(name, element)
-                        print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Result :',result[rdm]
+                        print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> ',result[rdm]
                 else:
                     serv.privmsg(name, 'Impossible to contact : DTC ('+page.content.split('<html><body><h1>')[1].split('</h1>')[0]+')')
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
@@ -679,22 +610,34 @@ class Robot(ircbot.SingleServerIRCBot):
                             _name+' send '+', '.join([ str(stat[_name][item])+' '+\
                             item[:-1]+('s','')[stat[_name][item]==1] for item in stat[_name] if item in stats])
                 elif message.split(' ')[0] in ['!tu','!topurl']:
+                    nb_url = 5
                     if len(message.split(' ')) == 1:
-                        serv.privmsg(name,'Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '\
-                            +item[2][:-3].replace('T',' ') for item in self.all_url[:10]]))
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                             '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '+\
-                            item[2][:-3].replace('T',' ') for item in self.all_url[:10]])
+                            item[2][:-3].replace('T',' ') for item in self.all_url[:nb_url]])
+                        serv.privmsg(name, 'Global top url :')
+                        time.sleep(0.1)
+                        for item in self.all_url[:nb_url]:
+                            time.sleep(0.1)
+                            serv.privmsg(name, item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '\
+                                +item[2][:-3].replace('T',' '))
                     else:
                         for _name in message.split(' ')[1:]:
                             try:
-                                serv.privmsg(name,_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
-                                    ' at '+item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:10]]))
-                                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+\
-                                    (str(item[1])+' times ','')[item[1] == 1]+' at '+item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:10]])
+                                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                                    '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '+\
+                                    item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:nb_url]])
+                                serv.privmsg(name, _name+' top url :')
+                                time.sleep(0.3)
+                                for item in stat[_name]['urls'][:nb_url]:
+                                    time.sleep(0.3)
+                                    serv.privmsg(name, item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
+                                        ' at '+item[2][:-3].replace('T',' '))
+                                
                             except:
                                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                                    '\033[0m> Error, procces abort !'
+                                    '\033[0m> No stat for '+_name
+                                serv.privmsg(name,'No stat for '+_name)
                 elif message.split(' ')[0] == '!cronvdm':
                     if message == 'cronvdm':
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
@@ -803,7 +746,7 @@ class Robot(ircbot.SingleServerIRCBot):
                     for name in message.split(' ')[1:]:
                         if name in self.half_admins:
                             self.half_admins.remove(name)
-                            temp._H.appen(name)
+                            temp._H.append(name)
                     if len(temp_H) != 0:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                             '\033[0m> '+', '.join(temp_H)+' '+('are','is')[len(temp_H)==1]+' not half admin'+('s','')[len(temp_H)==1]+' now'
@@ -846,7 +789,7 @@ class Robot(ircbot.SingleServerIRCBot):
                 ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] in [0,1]]+' ','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                 str(divmod(in_time.days * 86400 + in_time.seconds, 60)[1])+' seconde'+('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[1] in [0,1]]
 
-class lancheur(Thread):
+class Lancheur(Thread):
     def __init__(self, fonction):
         if fonction in ['bot','client','cronvdm','crondtc']:
             Thread.__init__(self)
@@ -858,7 +801,6 @@ class lancheur(Thread):
         if self.fonction == 'bot':
             robot.start()
         elif self.fonction == 'client':
-            self.__url = re.compile('(?:http[s]?|ftp)://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
             while not robot.is_connected():
                 quit = True
             cronvdm.stop = True
@@ -887,19 +829,11 @@ class lancheur(Thread):
                     '\033[0m> \033[1;32mAuto Re\033[0m'
                 robot.get_server()[1].privmsg(robot.get_channel(), 'Re')
             prompt()
-            try:
-                my_cmd.cmdloop()                                                
-            finally:
+            #try:
+            my_cmd.cmdloop()                                                
+            #finally:
+            if False:
                 print '\033[1;32mService end correctly !\033[0m'
-                if black_list_ip != []:
-                    try:
-                        _file = open('black.list.txt','w+')
-                        _file.write('\n'.join(['%s;%s' %(ip, black_list_try[black_list_ip.index(ip)]) for ip in black_list_ip]))
-                        _file.close()
-                    except:
-                        print '\033[1;31mError in writting black list !\033[0m'
-                        if os.path.isfile('./black.list.txt'):
-                            os.system('rm -f black.list.txt')
                 for name in stat.keys():
                     if not config.has_section(name):
                         config.add_section(name)
@@ -944,7 +878,7 @@ class lancheur(Thread):
                 time.sleep(3)
         else:
             print '\033[1;31mFunction unkown, programm stop\033[0m'
-        
+
 class MyCmd(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
@@ -954,6 +888,7 @@ class MyCmd(cmd.Cmd):
         self.history = {}
         self._help = {'help': None, 'quit':'if you are admin : bot quit, else you juste close client'}
         self.stop = False
+        self.__url = re.compile('(?:http[s]?|ftp)://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
     def postcmd(self, stop, line):
         if not line in self.history.values() and not line == '':
             self.history.update({len(self.history):line})
@@ -1061,7 +996,7 @@ class MyCmd(cmd.Cmd):
             robot.away_message = ''
         robot.get_server()[1].action(robot.get_channel(),('come back','is away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away])
         print '\r<\033['+PROMPT['%host%']+'mHost,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-        	'\033[0m> \033[0;32mRobot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away]+'\033[0m'
+            '\033[0m> \033[0;32mRobot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away]+'\033[0m'
     def complete_away(self, *ignored):
         pass
     def do_help(self, arg):
@@ -1128,8 +1063,8 @@ class MyCmd(cmd.Cmd):
     def do_lastkick(self, line):
         """Info : Get information about the last kick save, if it' possible
         """
-        robot.get_server()[1].privmsg(robot.get_channel(),line)
-        robot.fonction(robot.get_server()[1],robot.get_channel(),line,robot.get_name())
+        robot.get_server()[1].privmsg(robot.get_channel(),'!lastkick')
+        robot.fonction(robot.get_server()[1],robot.get_channel(),'!lastkick',robot.get_name())
     def complete_lastkick(self, *ignored):
         pass
     def do_connect(self, line):
@@ -1142,12 +1077,18 @@ class MyCmd(cmd.Cmd):
         """Params : <message>
         Info : robot do <message> in IRC
         """
-        robot.get_server()[1].action(robot.get_channel(),line.split(' ',1)[1])
+        robot.get_server()[1].action(robot.get_channel(),line)
         stat[robot.get_name()].update({'messages':stat[robot.get_name()]['messages']+1})
-        stat[robot.get_name()].update({'words':stat[robot.get_name()]['words']+len(line.split(' '))-1})
-        stat[robot.get_name()].update({'letters':stat[robot.get_name()]['letters']+len(line)-line.count(' ')-9})
+        stat[robot.get_name()].update({'words':stat[robot.get_name()]['words']+len(line.split(' '))})
+        stat[robot.get_name()].update({'letters':stat[robot.get_name()]['letters']+len(line)-line.count(' ')})
     def complete_robot(self, *ignored):
-        pass
+        if text:
+            return [
+                address for address in self.pseudo
+                if address.startswith(text)
+            ]
+        else:
+            return self.pseudo
     def do_vdm(self, line):
         """Params : ({1-15})?
         Info : Give one to 15 VDM, fonction is protect
@@ -1170,34 +1111,42 @@ class MyCmd(cmd.Cmd):
             if none give status
         """
         if line == '':
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Cronvdm is '+('off','on')[not cronvdm.stop]
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> Cronvdm is '+('off','on')[not cronvdm.stop]
         elif line == 'next':
             test = cronvdm._iter.get_prev(datetime)
             in_time = dateutil.parser.parse(cronvdm._iter.get_next(datetime).isoformat()) - dateutil.parser.parse(datetime.now().isoformat().split('.')[0])
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            	'\033[0m> Next auto vdm is in '+(str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0])+' minute'+\
+                '\033[0m> Next auto vdm is in '+(str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0])+' minute'+\
                 ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] in [0,1]]+' ','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                 str(divmod(in_time.days * 86400 + in_time.seconds, 60)[1])+' seconde'+('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[1] in [0,1]]
         elif line.split(' ')[0] in ['on','off'] and len(line.split(' ')) == 1:
             if ('off','on')[not cronvdm.stop] == line.split(' ')[0]:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Cronvdm is already '+('off','on')[not cronvdm.stop]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Cronvdm is already '+('off','on')[not cronvdm.stop]
             else:
                 cronvdm.stop = (True,False)[line.split(' ')[0] == 'on']
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Cronvdm is '+('off','on')[not cronvdm.stop]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Cronvdm is '+('off','on')[not cronvdm.stop]
         elif cronvdm and len(line.split(' ')) == 1 or len(line.split(' ')) == 5:
             try:
                 cronvdm._iter = croniter(line.split(' ',1)[0],datetime.now())
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> New cronvdm value is :',line.split(' ',1)[0]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> New cronvdm value is :',line.split(' ',1)[0]
             except:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Impossible option for !cronvdm'
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Impossible option for !cronvdm'
         elif len(line.split(' ')) == 1 or len(line.split(' ')) == 5:
             try:
                 test = croniter(line.split(' ',1)[0], datetime.now())
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Cronvdm is already off'
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Cronvdm is already off'
             except:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Impossible option for !cronvdm'
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Impossible option for !cronvdm'
         else:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Unkown option for !cronvdm'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> Unkown option for !cronvdm'
     def complete_cronvdm(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1212,7 +1161,8 @@ class MyCmd(cmd.Cmd):
             if none give status
         """
         if line == '':
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Crondtc is '+('off','on')[not crondtc.stop]
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> Crondtc is '+('off','on')[not crondtc.stop]
         elif line == 'next':
             test = crondtc._iter.get_prev(datetime)
             in_time = dateutil.parser.parse(crondtc._iter.get_next(datetime).isoformat()) - dateutil.parser.parse(datetime.now().isoformat().split('.')[0])
@@ -1221,24 +1171,31 @@ class MyCmd(cmd.Cmd):
                 str(divmod(in_time.days * 86400 + in_time.seconds, 60)[1])+' seconde'+('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[1] in [0,1]]
         elif line.split(' ')[0] in ['on','off'] and len(line.split(' ')) == 1:
             if ('off','on')[not crondtc.stop] == line.split(' ')[0]:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Crondtc is already '+('off','on')[not crondtc.stop]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Crondtc is already '+('off','on')[not crondtc.stop]
             else:
                 crondtc.stop = (True,False)[line.split(' ')[0] == 'on']
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Crondtc is '+('off','on')[not crondtc.stop]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Crondtc is '+('off','on')[not crondtc.stop]
         elif crondtc and len(line.split(' ')) == 1 or len(line.split(' ')) == 5:
             try:
                 crondtc._iter = croniter(line.split(' ',1)[0],datetime.now())
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> New crondtc value is :',line.split(' ',1)[0]
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> New crondtc value is :',line.split(' ',1)[0]
             except:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Impossible option for !crondtc'
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Impossible option for !crondtc'
         elif len(line.split(' ')) == 1 or len(line.split(' ')) == 5:
             try:
                 test = croniter(line.split(' ',1)[0], datetime.now())
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Crondtc is already off'
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Crondtc is already off'
             except:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Impossible option for !crondtc'
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Impossible option for !crondtc'
         else:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Unkown option for !crondtc'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> Unkown option for !crondtc'
     def complete_crondtc(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1265,16 +1222,20 @@ class MyCmd(cmd.Cmd):
         """Params : [on|off]
         Info : Give status of autohello or change it
         """
-        if mess[1:-1] == 'autohello':
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Autohello is '+('off','on')[robot.autohello]
-        elif mess[1:-1].split(' ')[1] in ['on','off']:
-            if ('off','on')[robot.autohello] == mess[1:-1].split(' ')[1]:
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Autohello is '+('off','on')[robot.autohello]
+        if line == '':
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> Autohello is '+('off','on')[robot.autohello]
+        elif line in ['on','off']:
+            if ('off','on')[robot.autohello] == line:
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Autohello is '+('off','on')[robot.autohello]
             else:
-                robot.autohello = (False,True)[mess[1:-1].split(' ')[1] == 'on']
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Autohello is '+('off','on')[robot.autohello]
+                robot.autohello = (False,True)[line == 'on']
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> Autohello is '+('off','on')[robot.autohello]
         else:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Unkown option for !autohello'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> Unkown option for !autohello'
     def complete_autohello(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1289,19 +1250,19 @@ class MyCmd(cmd.Cmd):
         """
         if line == '':
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            	'\033[0m> Fonctions are '+('off','on')[robot.fonctions]
+                '\033[0m> Fonctions are '+('off','on')[robot.fonctions]
         elif line.split(' ')[0] in ['on','off']:
             if ('off','on')[robot.fonctions] == line.split(' ')[0]:
                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                	'\033[0m> Fonctions are '+('off','on')[robot.fonctions]
+                    '\033[0m> Fonctions are '+('off','on')[robot.fonctions]
             else:
                 robot.fonctions = (False,True)[line.split(' ')[0] == 'on']
                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                	'\033[0m> Fonctions are',('off','on')[robot.fonctions]
+                    '\033[0m> Fonctions are',('off','on')[robot.fonctions]
                 robot.get_server()[1].privmsg(robot.get_channel(), 'Fonctions are '+('off','on')[robot.fonctions])
         else:
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            	'\033[0m> Unkown option for !fonction'
+                '\033[0m> Unkown option for !fonction'
     def complete_fonction(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1314,20 +1275,23 @@ class MyCmd(cmd.Cmd):
         """Info : Give admins list of the bot
         """
         if len(robot.admins) != 0:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+', '.join(robot.admins)+' '+('are','is')[len(robot.admins)==1]+\
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> '+', '.join(robot.admins)+' '+('are','is')[len(robot.admins)==1]+\
                 ' admin'+('s','')[len(robot.admins)==1]
         else:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> There is no admin'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> There is no admin'
     def complete_admins(self, text, line, start_index, end_index):
         pass
     def do_halfadmins(self, line):
         """Info : Give half admins list of the bot
         """
         if len(robot.half_admins) != 0:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+', '.join(robot.half_admins)+' '+('are','is')[len(robot.half_admins)==1]+\
-                ' halfadmin'+('s','')[len(robot.half_admins)==1]
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> '+', '.join(robot.half_admins)+' '+('are','is')[len(robot.half_admins)==1]+' halfadmin'+('s','')[len(robot.half_admins)==1]
         else:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> There is no halfadmin'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> There is no halfadmin'
     def complete_halfadmins(self, text, line, start_index, end_index):
         pass
     def do_stat(self, line):
@@ -1338,7 +1302,8 @@ class MyCmd(cmd.Cmd):
             line = robot.get_name()
         for _name in line.split(' '):
             if _name != '':
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+_name+' send '+', '.join([ str(stat[_name][item])+' '+\
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> '+_name+' send '+', '.join([ str(stat[_name][item])+' '+\
                     item[:-1]+('s','')[stat[_name][item]==1] for item in stat[_name] if item in stats])
     def complete_stat(self, text, line, start_index, end_index):
         if text:
@@ -1353,7 +1318,8 @@ class MyCmd(cmd.Cmd):
         """
         for _name in stat:
             if _name != '':
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+_name+' send '+', '.join([ str(stat[_name][item])+' '+\
+                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                    '\033[0m> '+_name+' send '+', '.join([ str(stat[_name][item])+' '+\
                     item[:-1]+('s','')[stat[_name][item]==1] for item in stat[_name] if item in stats])
     def complete_stats(self, *ignored):
         pass
@@ -1362,7 +1328,8 @@ class MyCmd(cmd.Cmd):
         """
         if line == '':
             info = robot.channels[robot.get_channel()]
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> Information from channel : '+robot.get_channel()+\
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> Information from channel : '+robot.get_channel()+\
                 ('Owners connected : '+', '.join(info.owners())+'\n','')[len(info.owners()) == 0]+\
                 ('Opers connected : '+', '.join(info.opers())+'\n','')[len(info.opers()) == 0]+\
                 ('Admins connected : '+', '.join(info.admins())+'\n','')[len(info.admins()) == 0]+\
@@ -1374,7 +1341,7 @@ class MyCmd(cmd.Cmd):
                 try:
                     info = robot.channels[_channel]
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                    	'\033[0m> Information from channel : '+_channel+\
+                        '\033[0m> Information from channel : '+_channel+\
                         ('Owners connected : '+', '.join(info.owners())+'\n','')[len(info.owners()) == 0]+\
                         ('Opers connected : '+', '.join(info.opers())+'\n','')[len(info.opers()) == 0]+\
                         ('Admins connected : '+', '.join(info.admins())+'\n','')[len(info.admins()) == 0]+\
@@ -1383,7 +1350,7 @@ class MyCmd(cmd.Cmd):
                         ('Users connected'+', '.join(info.users()),'')[len(info.users()) == 0]
                 except:
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                    	'\033[0m> No Info from channel : '+_channel
+                        '\033[0m> No Info from channel : '+_channel
     def complete_status(self, *ignored):
         pass
     def do_slap(self, line):
@@ -1393,7 +1360,7 @@ class MyCmd(cmd.Cmd):
         for name in line.split(' '):
             robot.get_server()[1].action(robot.get_channel(),'slaps '+name+' around a bit with a large trout')
             print '\r<\033['+PROMPT['%channel%']+'m'+robot.get_channel()+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            	'\033[0m> *'+robot.get_name()+'slaps '+name+' around a bit with a large trout*'
+                '\033[0m> *'+robot.get_name()+'slaps '+name+' around a bit with a large trout*'
     def complete_slap(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1409,9 +1376,12 @@ class MyCmd(cmd.Cmd):
         for name in line.split(' '):
             if name != '':
                 robot.admins.append(name)
-                print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                	'\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
-                	' admin'+('s','')[len(line.split(' '))==1]+' now'
+        if line.replace(' ','') != '':
+            robot.get_server()[1].privmsg(robot.get_channel(),'!admin '+line)
+            robot.get_server()[1].privmsg(robot.get_channel(),', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
+                ' admin'+('s','')[len(line.split(' '))==1]+' now')
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+' admin'+('s','')[len(line.split(' '))==1]+' now'
     def complete_admin(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1427,9 +1397,12 @@ class MyCmd(cmd.Cmd):
         for name in line.split(' '):
             if name != '':
                 robot.half_admins.append(name)
+        if line.replace(' ','') != '':
+            robot.get_server()[1].privmsg(robot.get_channel(),'!admin '+line)
+            robot.get_server()[1].privmsg(robot.get_channel(),', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
+                ' half admin'+('s','')[len(line.split(' '))==1]+' now')
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            	'\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+\
-                ' half admin'+('s','')[len(line.split(' '))==1]+' now'
+                '\033[0m> '+', '.join(line.split(' '))+' '+('are','is')[len(line.split(' '))==1]+' half admin'+('s','')[len(line.split(' '))==1]+' now'
     def complete_halfadmin(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1452,11 +1425,11 @@ class MyCmd(cmd.Cmd):
                 robot.half_admins.remove(name)
                 temp_H.append(name)
         if len(temp_A) != 0:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+', '.join(temp_A)+' '+('are','is')[len(temp_A)==1]+\
-                ' not admin'+('s','')[len(temp_A)==1]+' now'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> '+', '.join(temp_A)+' '+('are','is')[len(temp_A)==1]+' not admin'+('s','')[len(temp_A)==1]+' now'
         if len(temp_H) != 0:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+', '.join(temp_H)+' '+('are','is')[len(temp_H)==1]+\
-                ' not half admin'+('s','')[len(temp_H)==1]+' now'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> '+', '.join(temp_H)+' '+('are','is')[len(temp_H)==1]+' not half admin'+('s','')[len(temp_H)==1]+' now'
     def complete_unadmin(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1471,28 +1444,41 @@ class MyCmd(cmd.Cmd):
         Info : Get the current topic
         """
         try:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+robot.topic
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> '+robot.topic
         except:
-            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> There is no topic in this channel !'
+            print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                '\033[0m> There is no topic in this channel !'
     def complete_topic(self, line):
         pass
     def do_topurl(self, line):
         """Params : < pseudo>*
-        Info : Give top 10 of url, if no pseudo it's global top
+        Info : Give top 5 of url, if no pseudo it's global top
         """
-        if len(mess[1:-1].split(' ')) == 1:
+        nb_url = 5
+        robot.get_server()[1].privmsg(robot.get_channel(),'!topurl '+line)
+        if len(line.replace(' ','')) == 0:
+            robot.get_server()[1].privmsg(robot.get_channel(), 'Global top url :')
+            for item in robot.all_url[:nb_url]:
+                robot.get_server()[1].privmsg(robot.get_channel(), item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '\
+                    +item[2][:-3].replace('T',' '))
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            	'\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
-                ' at '+item[2][:-3].replace('T',' ') for item in robot.all_url[:10]])
+                '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
+                ' at '+item[2][:-3].replace('T',' ') for item in robot.all_url[:nb_url]])
         else:
-            for _name in mess[1:-1].split(' ')[1:]:
+            for _name in line.split(' '):
                 try:
+                    robot.get_server()[1].privmsg(robot.get_channel(), _name+' top url :')
+                    for item in stat[_name]['urls'][:nb_url]:
+                        robot.get_server()[1].privmsg(robot.get_channel(), item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
+                            ' at '+item[2][:-3].replace('T',' '))
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                    	'\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
-                        ' at '+item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:10]])
+                        '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
+                        ' at '+item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:nb_url]])
                 except:
+                    robot.get_server()[1].privmsg(robot.get_channel(),'No stat for '+_name)
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                    	'\033[0m> Error process abord !'
+                        '\033[0m> No stat for '+_name
     def complete_topurl(self, line):
         if text:
             return [
@@ -1506,7 +1492,7 @@ class MyCmd(cmd.Cmd):
         Info : change the channel of the bot to the given one
         """
         robot.get_server()[1].disconnect('leave')
-        robot.get_server()[1].join(mess[1:-1].split(' ')[1])        
+        robot.get_server()[1].join(line)        
     def complete_change(self, line):
         pass
     def do_history(self, line):
@@ -1516,7 +1502,8 @@ class MyCmd(cmd.Cmd):
         if not line:
             print '\n'.join(['-----------------['+str(item+1)+']\n'+self.history[item] for item in self.history])
         elif (line.isdigit() or (line[1:].isdigit() and line[0] in '+-')) and abs(int(line)) <= len(self.history) and line != '0':
-            print '-----------------['+(str(int(line)),str(len(self.history)+int(line)+1))[int(line) < 0]+']\n'+self.history[(int(line)-1,len(self.history)+int(line))[int(line) < 0]]
+            print '-----------------['+(str(int(line)),str(len(self.history)+int(line)+1))[int(line) < 0]+']\n'+\
+                self.history[(int(line)-1,len(self.history)+int(line))[int(line) < 0]]
         elif line[0] == '/':
             print '\n'.join(['-----------------['+str(item+1)+']\n'+self.history[item] for item in self.history if self.history[item].endswith(line[1:])])
         elif line[-1] == '/':
@@ -1525,21 +1512,14 @@ class MyCmd(cmd.Cmd):
             print '\n'.join(['-----------------['+str(item+1)+']\n'+self.history[item] for item in self.history if line in self.history[item]])
     def complete_history(self, *args):
         pass
-    def do_persist(self, line):
-        if line == 'off':
-            self.persist = False
-            self.prompt = "<\033[1;32mYou\033[0m> "
-        else:
-            self.persist = line
-            self.prompt = "<\033[1;32mYou\033[0m,\033[1;33m"+line+"\033[0m> "
     def quit(self):
         sys.exit()
 
 def main():
     try:
         # Threads 
-        thread_1 = lancheur("bot")
-        thread_2 = lancheur("client")
+        thread_1 = Lancheur("bot")
+        thread_2 = Lancheur("client")
         
         # Lanch !
         thread_1.start()
@@ -1553,6 +1533,7 @@ def main():
     except:
         print 'End program !'
 
+
 if __name__ == "__main__":
     try:
         _file = open('stat.txt','r+')
@@ -1563,10 +1544,10 @@ if __name__ == "__main__":
             with open('stat.txt', 'w') as outfile:
                 for item in text.split('\n'):
                     outfile.write(item+'\n')
-        stat= {}
         stats = ['words','letters','messages']
         config = ConfigParser.ConfigParser()
         config.readfp(io.BytesIO(text))
+        stat = {}
         def num(s):
             try:
                 return int(s)
@@ -1583,9 +1564,9 @@ if __name__ == "__main__":
     except IOError:
         print '\033[1;33mNo stats found !\033[0m'
         stat= {}
-    cronvdm = lancheur('cronvdm')
+    cronvdm = Lancheur('cronvdm')
     cronvdm._iter = croniter('0 * * * *', datetime.now())
-    crondtc = lancheur('crondtc')
+    crondtc = Lancheur('crondtc')
     crondtc._iter = croniter('0 * * * *', datetime.now())
     my_cmd = MyCmd()
     name = ''
@@ -1601,10 +1582,10 @@ if __name__ == "__main__":
     if '-p' in sys.argv and (len(sys.argv)-1)-sys.argv.index('-p') > 0:
         password = sys.argv[sys.argv.index('-p')+1]
     if '--prompt' in sys.argv and (len(sys.argv)-1)-sys.argv.index('--prompt') > 0:
-        PROMPT = {item[1]:item[0] for item in [('0;31', '%host%'), ('1;32', '%time%'), ('1;34', '%channel%'),\
+        PROMPT = {item[1]:item[0] for item in [('1;31', '%host%'), ('1;32', '%time%'), ('1;34', '%channel%'),\
             ('0;31', '%private%'), ('1;32', '%pseudo%'), ('1;32', '%pseudo_private%'), ('1;33','%pseudo_other%')]+\
             re.findall('\\033[[]((?:(?:[0-9]|2[1-3]|[3-49][0-7])?;)*(?:[0-9]|2[1-3]|[3-49][0-7])?)m(%(?:host|time|channel|private|pseudo(?:|_private|_other))%)\\033[[]0?m',\
-			sys.argv[sys.argv.index('--prompt')+1])}
+            sys.argv[sys.argv.index('--prompt')+1])}
     else:
         PROMPT = {'%private%': '0;31', '%host%': '0;31', '%pseudo%': '0;32', '%channel%': '0;34', '%pseudo_private%': '0;32', '%time%': '0;32','%pseudo_other%':'0;33'}
     if name != '' and channel != '' and server != '' and password != '':
@@ -1664,4 +1645,3 @@ if __name__ == "__main__":
         config.set('DEFAULT','all_url','[]')
         robot.all_url = []
     main()
-
