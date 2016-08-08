@@ -5,8 +5,8 @@ This is a dirty code for an IRC Bot controlable by the cmd lib in python (only 2
 The bot can auto reply form simple and structured request
 
 There is two version :
-  - direct control : the cmd controlor running over the main program,
-  - remote control : with socket you connect to the bot and his connect to the IRC server.
+  - direct control : the cmd controlor running over the main program, 
+  - remote control : with socket you connect to the bot and his connect to the IRC server. 
 
 Prefer local control !
 
@@ -31,3 +31,5 @@ The bot can get five diffrents agruments :
     - `%pseudo_other%` in yellow
 
 Exemple of change tag to get host in yellow with no font : `--prompt "\033[0;34m%host%\033[0m"`
+
+Please note that SSL and server port need manual change !
