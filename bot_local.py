@@ -61,7 +61,7 @@ def prompt() :
     sys.stdout.flush()
 
 class Robot(ircbot.SingleServerIRCBot):
-    def __init__(self, name = 'Martoni', channel = '#cyberbullshit', server = 'irc.cocoland.me', password = None, port = 6697, ssl =True):
+    def __init__(self, name = 'Bot', channel = '#Channel', server = 'irc.worldnet.net', password = None, port = 7000, ssl =True):
         self.__name = name
         self.__channel = channel
         self.__server = server
@@ -613,31 +613,30 @@ class Robot(ircbot.SingleServerIRCBot):
                     nb_url = 5
                     if len(message.split(' ')) == 1:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '+\
+                            '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit at '+\
                             item[2][:-3].replace('T',' ') for item in self.all_url[:nb_url]])
                         serv.privmsg(name, 'Global top url :')
                         time.sleep(0.1)
                         for item in self.all_url[:nb_url]:
                             time.sleep(0.1)
-                            serv.privmsg(name, item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '\
+                            serv.privmsg(name, item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit at '\
                                 +item[2][:-3].replace('T',' '))
                     else:
                         for _name in message.split(' ')[1:]:
                             try:
                                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                                    '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '+\
+                                    '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit at '+\
                                     item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:nb_url]])
                                 serv.privmsg(name, _name+' top url :')
                                 time.sleep(0.3)
                                 for item in stat[_name]['urls'][:nb_url]:
                                     time.sleep(0.3)
-                                    serv.privmsg(name, item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
-                                        ' at '+item[2][:-3].replace('T',' '))
-                                
+                                    serv.privmsg(name, item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+\
+                                        'last hit at '+item[2][:-3].replace('T',' '))
                             except:
                                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                                     '\033[0m> No stat for '+_name
-                                serv.privmsg(name,'No stat for '+_name)
+                                serv.privmsg(author,'No stat for '+_name)
                 elif message.split(' ')[0] == '!cronvdm':
                     if message == 'cronvdm':
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
