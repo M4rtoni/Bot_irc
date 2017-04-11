@@ -242,6 +242,9 @@ class SingleServerIRCBot(SimpleIRCClient):
         self._connect()
         SimpleIRCClient.start(self)
 
+    def stop(self):
+        SimpleIRCClient.stop(self)
+
 
 class IRCDict:
     """A dictionary suitable for storing IRC-related things.

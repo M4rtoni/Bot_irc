@@ -7,15 +7,20 @@
 # Created By        : Florian MAUFRAIS
 # Contact           : florian.maufrais@gmail.com
 # Creation Date     : december  22th, 2015
-# Version           : 1.0.1
-# Last Change       : august 05th, 2016 at 10:00
+# Version           : 1.1.0
+# Last Change       : April 11th, 2017 at 15:50
 # Last Changed By   : Florian MAUFRAIS
 # Purpose           : This programm use an IRC bot and cmd line interface
-#                     If you find bug or want more information  please contact !
+#                     If you find bugs or want more information please contact !
 #
 ################################################################################"""
 
-import os, sys, re, cmd, requests, base64, random, md5, ConfigParser, io
+__version__='1.1.0'
+__all__=['Robot','lancheur','MyCmd','__version__']
+
+################################################################################
+import base64, os, random, md5, sys, re, requests, ConfigParser, io, cmd
+#import select
 
 from threading import Thread
 from datetime import datetime
@@ -48,12 +53,6 @@ try:
 except ImportError:
     raise ImportError("You need pyparsing lib !") 
         
-ESC = Literal('\x1b')
-integer = Word(nums)
-escapeSeq = Combine(ESC + '[' + Optional(delimitedList(integer,';')) + oneOf(list(alphas)))
-
-UncolorString = lambda s : Suppress(escapeSeq).transformString(s)
-
 def prompt() :
     import readline
     origline = readline.get_line_buffer()
@@ -61,23 +60,25 @@ def prompt() :
     sys.stdout.flush()
 
 class Robot(ircbot.SingleServerIRCBot):
-    def __init__(self, name = 'Bot', channel = '#Channel', server = 'irc.worldnet.net', password = None, port = 7000, ssl =True):
+    def __init__(self, name = 'Martoni', channel = '#Martoni', server = 'irc.worldnet.net', password = None, port = 7000, ssl = True):
         self.__name = name
         self.__channel = channel
         self.__server = server
         self.__port = port
         self.__connected = False
+        self.__ssl = ssl
         self.away = False
         self.away_message = ''
         self.fonctions = False
         self.autohello = False
         self.wake_up = datetime.now()
         self.last_stop = datetime.now()
-        self.admins = []
+        self.admins = ['elcoc0']
         self.half_admins = []
-        self.superadmins = []
+        self.superadmins = ['Martoni','Patrik','frenchbeard','nodulaire']
         self.lastkick = ['','','','']
         self.history = []
+        self.__stop = False
         self.end = False
         self.try_quit = False
         self.fonction_list = ['!md5','!help','!decodeb64','!encodeb64','!vdm','!dtc','!score']
@@ -95,7 +96,7 @@ class Robot(ircbot.SingleServerIRCBot):
         channel = ev.target()
         if author != self.__name:
             info = self.channels[self.__channel]
-            print ('\r<\033['+PROMPT['%channel%']+'m'+channel+'\033[0m> \033[1;32m '+self.__user_mode(author)+author),'enter !\033[0m'
+            print ('\r<\033['+PROMPT['%channel%']+'m'+channel+'\033[0m> \033[0;32m '+self.__user_mode(author)+author),'enter !\033[0m'
             if not name in stat.keys():
                 stat.update({name:{item:0 for item in stats}})
                 stat[author].update({'urls':[]})
@@ -106,7 +107,7 @@ class Robot(ircbot.SingleServerIRCBot):
         else:
             self.__connected = True
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> \033[1;32mJoin',self.__channel,'on',self.__server,'\033[0m'
+                '\033[0m> \033[1;32mJoin',self.__channel,'on',self.__server,'\033[0m '
         prompt()
     def on_pubmsg(self, serv, ev):
         message = ev.arguments()[0]
@@ -261,10 +262,10 @@ class Robot(ircbot.SingleServerIRCBot):
         info = self.channels[ev.target()]
         if message != []:
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> \033[0;32m'+self.__user_mode(author)+author,('has left ! ('+' '.join(message)+')\033[0m')
+                '\033[0m> \033[1;32m'+self.__user_mode(author)+author,('has left ! ('+' '.join(message)+')\033[0m')
         else:
             print ('\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> \033[0;32m'+self.__user_mode(author)+author),'has left !\033[0m'
+                '\033[0m> \033[1;32m'+self.__user_mode(author)+author),'has left !\033[0m'
         prompt()
     def on_quit(self, serv, ev):
         channel = ev.target()
@@ -273,10 +274,10 @@ class Robot(ircbot.SingleServerIRCBot):
         info = self.channels[ev.target()]
         if message != []:
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> \033[0;32m'+self.__user_mode(author)+author,('has left ! ('+' '.join(message)+')\033[0m')
+                '\033[0m> \033[1;32m'+self.__user_mode(author)+author,('has left ! ('+' '.join(message)+')\033[0m')
         else:
             print ('\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> \033[0;32m'+self.__user_mode(author)+author),'has left !\033[0m'
+                '\033[0m> \033[1;32m'+self.__user_mode(author)+author),'has left !\033[0m'
         prompt()
     def on_nick(self, serv, ev):
         channel = ev.target()
@@ -290,7 +291,7 @@ class Robot(ircbot.SingleServerIRCBot):
             self.half_admins.append(channel)
         info = self.channels[self.__channel]
         print '\r<\033['+PROMPT['%channel%']+'m'+self.__channel+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            '\033[0m> \033[0;32m'+self.__user_mode(author)+author,'has rename in',channel,'\033[0m'
+            '\033[0m> \033[1;32m'+self.__user_mode(author)+author,'has rename in',channel,'\033[0m'
         if not channel in stat.keys():
             stat.update({channel:{item:0 for item in stats}})
             config.add_section(channel)
@@ -304,7 +305,7 @@ class Robot(ircbot.SingleServerIRCBot):
         message = ev.arguments()
         info = self.channels[ev.target()]
         print ('<\033['+PROMPT['%channel%']+'m'+channel+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            '\033[0m> \033[0;32m*'+self.__user_mode(author)+author+' '+' '.join(message)+'*\033[0m')
+            '\033[0m> \033[1;32m*'+self.__user_mode(author)+author+' '+' '.join(message)+'*\033[0m')
         if author in stat.keys():
             stat[author].update({'messages':stat[author]['messages']+1})
             stat[author].update({'words':stat[author]['words']+len(message)})
@@ -326,14 +327,14 @@ class Robot(ircbot.SingleServerIRCBot):
         message = ev.arguments()
         info = self.channels[ev.target()]
         liste_spe= 'inpstmclkSR'
-        if True in [item in liste_spe for item in message[0]] and False:
-            for item in range(len(message[0])):
-                if not item in '+-':
-                    tp = 0
-                    while not message[0][item-tp] in '+-':
-                        tp += 1
-                    serv.mode(channel,('-','+')[message[0][item-tp] == '-']+message[0][item])
-        print ('\r<\033['+PROMPT['%channel%']+'m'+channel+'\033[0m> \033[0;32m'+self.__user_mode(author)+author+' change mode : '+' '.join(message)+'\033[0m')
+        #if True in [item in liste_spe for item in message[0]]:
+        #    for item in range(len(message[0])):
+        #        if not item in '+-':
+        #            tp = 0
+        #            while not message[0][item-tp] in '+-':
+        #                tp += 1
+        #            serv.mode(channel,('-','+')[message[0][item-tp] == '-']+message[0][item])
+        print ('\r<\033['+PROMPT['%channel%']+'m'+channel+'\033[0m> \033[1;32m'+self.__user_mode(author)+author+' change mode : '+' '.join(message)+'\033[0m')
         prompt()
     def on_currenttopic(self, serv, ev):
         arg = ev.arguments()
@@ -369,6 +370,7 @@ class Robot(ircbot.SingleServerIRCBot):
             serv.privmsg(dest,'- !info : bot informations (only in primsg)')
             serv.privmsg(dest,'- !stat< pseudo>* : Give stats of pseudo list, if no pseudo it give your stat')
             serv.privmsg(dest,'- (!tu|!topurl)< pseudo>* : Give top 10 of url listen ([url, number_of_hint, last_hit]), if no pseudo it\'s global top')
+            serv.privmsg(dest,'- (!lp|!lastpast) [nb] : Give top nb (3 to 10) of last pastbin saved ([url, last_hit])')
             serv.privmsg(dest,'- !stats : Give all stats ! (the list could be long !)')
             serv.privmsg(dest,'- !halfadmin< pseudo>+ : Give half admin right for each pseudo in your list')
             serv.privmsg(dest,'- !halfadmins : Give half admin list')
@@ -400,13 +402,17 @@ class Robot(ircbot.SingleServerIRCBot):
         else: 
             ret = 'Bot name : '+self.__name+'\nBot is not connected !'
         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m> '+ret
-        prompt()
         return ret
     def is_connected(self):
         return self.__connected
+    def quit(self, raison=None):
+        raison = (raison,'Time to quit !')[raison==None or not raison is str]
+        print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+\
+            datetime.now().time().isoformat().split('.')[0]+'\033[0m> \033[1;33m'+raison+'\033[0m'
+        self.stop()
     def fonction(self, serv, name, message, author):
         info = self.channels[self.__channel]
-        if self.fonctions or author in [self.__name]+self.superadmins+self.admins+self.half_admins:
+        if self.fonctions or author in [self.__name]+self.superadmins+self.admins+self.half_admins and False:
             if message == '!help':
                 self.on_help(serv, author)
             elif message == '!lastkick':
@@ -433,17 +439,17 @@ class Robot(ircbot.SingleServerIRCBot):
                         str(in_time.seconds%60)+' seconde'+('s','')[in_time.seconds%60 in [0,1]]+' ago')
                 else:
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                        '\033[0m> \033[0;32mNo Kick saved\033[0m' 
+                        '\033[0m> \033[1;32mNo Kick saved\033[0m' 
                     serv.privmsg(name, 'No Kick saved')
             elif message.split(' ')[0] == '!encodeb64' and len(message.split(' ',1)) == 2:
                 serv.privmsg(name, base64.b64encode(message.split(' ',1)[1]))
                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                    '\033[0m> Result :',base64.b64encode(message.split(' ',1)[1])
+                    '\033[0m> ',base64.b64encode(message.split(' ',1)[1])
             elif message.split(' ')[0] == '!decodeb64' and len(message.split(' ',1)) == 2:
                 try:
                     serv.privmsg(name, base64.b64decode(message.split(' ',1)[1]))
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                        '\033[0m> Result :',base64.b64decode(message.split(' ',1)[1])
+                        '\033[0m> ',base64.b64decode(message.split(' ',1)[1])
                 except:
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                         '\033[0m> Can\'t decode data !\033[0m'
@@ -451,7 +457,7 @@ class Robot(ircbot.SingleServerIRCBot):
             elif message.split(' ')[0] == '!md5' and len(message.split(' ',1)) == 2:
                 serv.privmsg(name, md5.new(message.split(' ',1)[1]).digest())
                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                    '\033[0m> Result :',md5.new(message.split(' ',1)[1]).digest()
+                    '\033[0m> ',md5.new(message.split(' ',1)[1]).digest()
             elif message.split(' ')[0] == '!vdm':
                 page=requests.get('http://www.viedemerde.fr/aleatoire')
                 if page.ok:
@@ -528,18 +534,18 @@ class Robot(ircbot.SingleServerIRCBot):
                                     page=requests.get('http://www.root-me.org'+p.findall(item)[0][0].split('?')[0]+'?inc=score&lang=fr')
                                     temp =  q.findall(page.content.split('small-12 columns')[3].split('<a class="mediabox pageajax"')[0].replace('\n',''))[0]
                                     print ('\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                                        '\033[0m> \033[0;32m'+p.findall(item)[0][1]+' have '+temp[0]+' point'+('s','')[temp[0] == 0]+', he resolved '+temp[1]+' of the '+temp[2]+\
+                                        '\033[0m> \033[1;32m'+p.findall(item)[0][1]+' have '+temp[0]+' point'+('s','')[temp[0] == 0]+', he resolved '+temp[1]+' of the '+temp[2]+\
                                         ' challenge'+('s','')[temp[2] == 0]+', he\'s ranked at '+temp[3]+' out of '+temp[4]+' players ('+temp[5]+') in Root-me\033[0m')
                                     serv.privmsg(name, p.findall(item)[0][1]+' have '+temp[0]+' point'+('s','')[temp[0] == 0]+', he resolved '+temp[1]+' of the '+temp[2]+\
                                         ' challenge'+('s','')[temp[2] == 0]+', he\'s ranked at '+temp[3]+' out of '+temp[4]+' players ('+temp[5]+') in Root-me')
                             except:
                                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                                    '\033[0m> \033[0;32mno such result in Root-me for',_name,'\033[0m'
+                                    '\033[0m> \033[1;32mno such result in Root-me for',_name,'\033[0m'
                                 serv.privmsg(name,'no such result in Root-me for '+_name)
                                 break
                     else:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> \033[0;32mno such result in Root-me for',_name,'\033[0m'
+                            '\033[0m> \033[1;32mno such result in Root-me for',_name,'\033[0m'
                         serv.privmsg(name,'no such result in Root-me for '+_name)
                     page=requests.get('https://www.newbiecontest.org/index.php?page=classementdynamique&limit=0&member='+_name+'&nosmiley=0')
                     if 'Recherche de '+_name+' :' in page.content:
@@ -553,21 +559,21 @@ class Robot(ircbot.SingleServerIRCBot):
                         for item in value:
                             val.update({item[0]:(item[-2],item[-1])[item[-1]!='']})
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> \033[0;32m'+val['name']+' has '+val['Points']+' point'+('s','')[val['Points'] == 0]+', his rank is '+\
+                            '\033[0m> \033[1;32m'+val['name']+' has '+val['Points']+' point'+('s','')[val['Points'] == 0]+', his rank is '+\
                             val['Position'].split('/')[0]+' out of '+val['Position'].split('/')[1]+' players ('+val['Titre']+') in Newbie\033[0m'
                         serv.privmsg(name, val['name']+' has '+val['Points']+' point'+('s','')[val['Points'] == 0]+', his rank is '+val['Position'].split('/')[0]+\
                             ' out of '+val['Position'].split('/')[1]+' players ('+val['Titre']+') in Newbie')
                     elif ' Affinez votre recherche' in page.content:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> \033[0;32mImpossible to complete search for '+_name+' in Newbie ('+\
+                            '\033[0m> \033[1;32mImpossible to complete search for '+_name+' in Newbie ('+\
                             page.content.split(' Affinez votre recherche')[0].split('<td>')[-1].replace('\n','')+')\033[0m'
                         serv.privmsg(name,'Impossible to complete search for '+_name+' in Newbie ('+\
                             page.content.split(' Affinez votre recherche')[0].split('<td>')[-1].replace('\n','')+')')
                     else:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> \033[0;32mno such result in Newbie for',_name,'\033[0m'
+                            '\033[0m> \033[1;32mno such result in Newbie for',_name,'\033[0m'
                         serv.privmsg(name,'no such result in Newbie for '+_name)
-            if author in [self.__name]+self.superadmins+self.admins:
+            elif author in [self.__name]+self.superadmins+self.admins:
                 if message.split(' ')[0] == '!superadminofthedeath' and not author in self.admins:
                     serv.primsg(channel,'Do you think this commande realy exist ?')
                 elif message == '!info' and self.channels.__contains__(self.__channel):
@@ -583,15 +589,14 @@ class Robot(ircbot.SingleServerIRCBot):
                     cible = ' '.join(info.users()).split(' ')[random.randint(0,len(info.users())-1)]
                     serv.action(self.__channel, 'execute order 66')
                     print '\r<\033['+PROMPT['%channel%']+'m'+self.__channel+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                        '\033[0m> \033[0;32m*'+self.__name+' execute order 66*\033[0m'
+                        '\033[0m> \033[1;32m*'+self.__name+' execute order 66*\033[0m'
                     info = self.channels[self.__channel]
                     if cible in info.users() and not info.is_owner(cible) and not info.is_admin(cible) and not info.is_oper(cible):
                         serv.kick(self.__channel,name,'take a blaster and open fire')
-
                     else:
                         serv.action(self.__channel, 'take a blaster, but con\'t open fire on '+cible)
                         print '\r<\033['+PROMPT['%channel%']+'m'+self.__channel+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> \033[0;32m*'+self.__name+' take a blaster, but con\'t open fire on '+cible+'*\033[0m'
+                            '\033[0m> \033[1;32m*'+self.__name+' take a blaster, but con\'t open fire on '+cible+'*\033[0m'
                 elif message == '!halfadmins':
                     if len(self.admins) != 0:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+'\033[0m> '+\
@@ -613,30 +618,46 @@ class Robot(ircbot.SingleServerIRCBot):
                     nb_url = 5
                     if len(message.split(' ')) == 1:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                            '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit at '+\
-                            item[2][:-3].replace('T',' ') for item in self.all_url[:nb_url]])
+                            '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit the '+\
+                            item[2][:-3].replace('T',' at ') for item in self.all_url[:nb_url]])
                         serv.privmsg(name, 'Global top url :')
                         time.sleep(0.1)
                         for item in self.all_url[:nb_url]:
                             time.sleep(0.1)
-                            serv.privmsg(name, item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit at '\
-                                +item[2][:-3].replace('T',' '))
+                            serv.privmsg(name, item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit the '\
+                                +item[2][:-3].replace('T',' at '))
                     else:
                         for _name in message.split(' ')[1:]:
                             try:
                                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                                    '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit at '+\
-                                    item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:nb_url]])
+                                    '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit the '+\
+                                    item[2][:-3].replace('T',' at ') for item in stat[_name]['urls'][:nb_url]])
                                 serv.privmsg(name, _name+' top url :')
                                 time.sleep(0.3)
                                 for item in stat[_name]['urls'][:nb_url]:
                                     time.sleep(0.3)
                                     serv.privmsg(name, item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+\
-                                        'last hit at '+item[2][:-3].replace('T',' '))
+                                        'last hit the '+item[2][:-3].replace('T',' at '))
                             except:
                                 print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                                     '\033[0m> No stat for '+_name
                                 serv.privmsg(author,'No stat for '+_name)
+                elif message.split(' ')[0] in ['!lp','!lastpast']:
+                    nb_past = 3
+                    if len(message.split(' ')) == 2:
+                        try:
+                            nb_past = max(3,min(int(message.split(' ')[1]),10))
+                        except:
+                            nb_past = 3
+                    print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+                        '\033[0m> Last pastbin :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit the '+\
+                        item[2][:-3].replace('T',' at ') for item in self.all_url if re.match('(?:http[s]?|ftp)://\w+bin(?:[.]\w+)+(?:[/].*)?', item[0])][:nb_paste])
+                    serv.privmsg(name, 'Last pastbin :')
+                    time.sleep(0.3)
+                    past_liste = [item for item in self.all_url if re.match('(?:http[s]?|ftp)://\w+bin(?:[.]\w+)+(?:[/].*)?', item[0])][:nb_paste]
+                    for item in past_liste:
+                        time.sleep(0.3)
+                        serv.privmsg(name, item[0]+', last hit the '+item[2][:-3].replace('T',' at '))
                 elif message.split(' ')[0] == '!cronvdm':
                     if message == 'cronvdm':
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
@@ -749,7 +770,7 @@ class Robot(ircbot.SingleServerIRCBot):
                     if len(temp_H) != 0:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                             '\033[0m> '+', '.join(temp_H)+' '+('are','is')[len(temp_H)==1]+' not half admin'+('s','')[len(temp_H)==1]+' now'
-                elif message.split(' ')[0] == '!admins' and    not author in self.admins:
+                elif message.split(' ')[0] == '!admins' and not author in self.admins:
                     if len(self.admins) != 0:
                         print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                             '\033[0m> '+', '.join(self.admins)+' '+('are','is')[len(self.admins)==1]+' admin'+('s','')[len(self.admins)==1]
@@ -767,7 +788,7 @@ class Robot(ircbot.SingleServerIRCBot):
                     if name != self.__name:
                         serv.privmsg(author,', '.join(message[1:-1].split(' ')[1:])+' '+('are','is')[len(message[1:-1].split(' ')[1:])==1]+\
                             ' admin'+('s','')[len(message[1:-1].split(' ')[1:])==1]+' now\n')
-        elif message.split(' ')[0] == '!vdm' and not cronvdm.stop:
+        elif message.split(' ')[0] == '!vdm' and not cronvdm.stop and False:
             in_time = dateutil.parser.parse(cronvdm._iter.get_next(datetime).isoformat()) - dateutil.parser.parse(datetime.now().isoformat().split('.')[0])
             test = cronvdm._iter.get_prev(datetime)
             serv.privmsg(name, 'You have not access to this fonction but next auto vdm is in '+(str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0])+' minute'+\
@@ -777,7 +798,7 @@ class Robot(ircbot.SingleServerIRCBot):
                 '\033[0m> You have not access to this fonction but next auto vdm is in '+(str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0])+' minute'+\
                 ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] in [0,1]]+' ','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                 str(divmod(in_time.days * 86400 + in_time.seconds, 60)[1])+' seconde'+('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[1] in [0,1]]
-        elif message.split(' ')[0] == '!dtc' and not crondtc.stop:
+        elif message.split(' ')[0] == '!dtc' and not crondtc.stop and False:
             in_time = dateutil.parser.parse(crondtc._iter.get_next(datetime).isoformat()) - dateutil.parser.parse(datetime.now().isoformat().split('.')[0])
             test = crondtc._iter.get_prev(datetime)
             serv.privmsg(name, 'You have not access to this fonction but next auto dtc is in '+(str(divmod(in_time.days * 86400 + in_time.seconds, 60)[0])+' minute'+\
@@ -788,7 +809,7 @@ class Robot(ircbot.SingleServerIRCBot):
                 ('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] in [0,1]]+' ','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[0] == 0]+\
                 str(divmod(in_time.days * 86400 + in_time.seconds, 60)[1])+' seconde'+('s','')[divmod(in_time.days * 86400 + in_time.seconds, 60)[1] in [0,1]]
 
-class Lancheur(Thread):
+class lancheur(Thread):
     def __init__(self, fonction):
         if fonction in ['bot','client','cronvdm','crondtc']:
             Thread.__init__(self)
@@ -796,9 +817,17 @@ class Lancheur(Thread):
             if fonction in ['cronvdm','crondtc']:
                 self.stop = True
                 self.end = False
+        else:
+            print '\003[0;32mThread aborded : Invalid fonction ! ('+fonction+')\033[0m'
     def run(self):
         if self.fonction == 'bot':
-            robot.start()
+            try:
+                robot.start()
+            except Exception, e:
+                print "You lose the game !"
+            finally:
+                print '\r\033[1;32mBot closed !\033[0m'
+                sys.exit(0)
         elif self.fonction == 'client':
             while not robot.is_connected():
                 quit = True
@@ -828,11 +857,20 @@ class Lancheur(Thread):
                     '\033[0m> \033[1;32mAuto Re\033[0m'
                 robot.get_server()[1].privmsg(robot.get_channel(), 'Re')
             prompt()
-            #try:
-            my_cmd.cmdloop()                                                
-            #finally:
-            if False:
-                print '\033[1;32mService end correctly !\033[0m'
+            self.__last_error = None
+            try:
+                while not my_cmd.stop:
+                    try:
+                        my_cmd.cmdloop()
+                    except Exception, e:
+                        print e.__class__.__name__, e, e.message
+                        if self.__last_error:
+                            if [e,datetime.now().isoformat().split('.')[0]] == self.__last_error:
+                                print "\033[0;31mError loop stop service !\033[0m"
+                                raise Exception("Error loop stop service !")
+                        self.__last_error= [e,datetime.now().isoformat().split('.')[0]]
+            finally:
+                print '\033[1;32mService is stopping !\033[0m'
                 for name in stat.keys():
                     if not config.has_section(name):
                         config.add_section(name)
@@ -849,6 +887,10 @@ class Lancheur(Thread):
                 cronvdm.end = True
                 crondtc.stop = True
                 crondtc.end = True
+                if not robot.is_connected():
+                    robot.quit()                    
+                print '\033[1;32mClient end correctly !\033[0m'
+                sys.exit(0)
         elif self.fonction == 'cronvdm':
             while not self.end:
                 while not self.stop:
@@ -877,7 +919,7 @@ class Lancheur(Thread):
                 time.sleep(3)
         else:
             print '\033[1;31mFunction unkown, programm stop\033[0m'
-
+        
 class MyCmd(cmd.Cmd):
     def __init__(self):
         cmd.Cmd.__init__(self)
@@ -974,7 +1016,8 @@ class MyCmd(cmd.Cmd):
             return self.pseudo
     def do_quit(self, line):
         self.stop = True
-        sys.exit()
+        robot.quit(raison=(line,None)[len(line)==0])
+        sys.exit(0)
     def complete_quit(self, text, line, start_index, end_index):
         pass
     def do_applause(self, line):
@@ -995,7 +1038,7 @@ class MyCmd(cmd.Cmd):
             robot.away_message = ''
         robot.get_server()[1].action(robot.get_channel(),('come back','is away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away])
         print '\r<\033['+PROMPT['%host%']+'mHost,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-            '\033[0m> \033[0;32mRobot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away]+'\033[0m'
+            '\033[0m> \033[1;32mRobot '+('get back','come away'+(' ('+robot.away_message+')','')[len(robot.away_message)==0])[robot.away]+'\033[0m'
     def complete_away(self, *ignored):
         pass
     def do_help(self, arg):
@@ -1359,7 +1402,7 @@ class MyCmd(cmd.Cmd):
         for name in line.split(' '):
             robot.get_server()[1].action(robot.get_channel(),'slaps '+name+' around a bit with a large trout')
             print '\r<\033['+PROMPT['%channel%']+'m'+robot.get_channel()+'\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> *'+robot.get_name()+'slaps '+name+' around a bit with a large trout*'
+                '\033[0m> *'+robot.get_name()+' slaps '+name+' around a bit with a large trout*'
     def complete_slap(self, text, line, start_index, end_index):
         if text:
             return [
@@ -1448,7 +1491,7 @@ class MyCmd(cmd.Cmd):
         except:
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                 '\033[0m> There is no topic in this channel !'
-    def complete_topic(self, line):
+    def complete_topic(self, *ignored):
         pass
     def do_topurl(self, line):
         """Params : < pseudo>*
@@ -1459,21 +1502,21 @@ class MyCmd(cmd.Cmd):
         if len(line.replace(' ','')) == 0:
             robot.get_server()[1].privmsg(robot.get_channel(), 'Global top url :')
             for item in robot.all_url[:nb_url]:
-                robot.get_server()[1].privmsg(robot.get_channel(), item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+' at '\
-                    +item[2][:-3].replace('T',' '))
+                robot.get_server()[1].privmsg(robot.get_channel(), item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit the '\
+                    +item[2][:-3].replace('T',' at '))
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
-                ' at '+item[2][:-3].replace('T',' ') for item in robot.all_url[:nb_url]])
+                '\033[0m> Global top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+\
+                'last hit the '+item[2][:-3].replace('T',' at ') for item in robot.all_url[:nb_url]])
         else:
             for _name in line.split(' '):
                 try:
                     robot.get_server()[1].privmsg(robot.get_channel(), _name+' top url :')
                     for item in stat[_name]['urls'][:nb_url]:
-                        robot.get_server()[1].privmsg(robot.get_channel(), item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
-                            ' at '+item[2][:-3].replace('T',' '))
+                        robot.get_server()[1].privmsg(robot.get_channel(), item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+\
+                            'last hit the '+item[2][:-3].replace('T',' at '))
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
-                        '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times ','')[item[1] == 1]+\
-                        ' at '+item[2][:-3].replace('T',' ') for item in stat[_name]['urls'][:nb_url]])
+                        '\033[0m> '+_name+' top url :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+\
+                        'last hit the '+item[2][:-3].replace('T',' at ') for item in stat[_name]['urls'][:nb_url]])
                 except:
                     robot.get_server()[1].privmsg(robot.get_channel(),'No stat for '+_name)
                     print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
@@ -1486,13 +1529,31 @@ class MyCmd(cmd.Cmd):
             ]
         else:
             return self.pseudo
+    def do_lastpast(self, line):
+        nb_past = 3
+        if len(line.split(' ')) == 1:
+            try:
+                nb_past = max(3,min(int(line),10))
+            except:
+                nb_past = 3
+        print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
+            '\033[0m> Last pastbin :\n'+'\n'.join([ item[0]+', '+(str(item[1])+' times, ','')[item[1] == 1]+'last hit the '+\
+            item[2][:-3].replace('T',' at ') for item in robot.all_url if re.match('(?:http[s]?|ftp)://\w+bin(?:[.]\w+)+(?:[/].*)?', item[0])][:nb_paste])
+        robot.get_server()[1].privmsg(robot.get_channel(), 'Last pastbin :')
+        time.sleep(0.3)
+        past_liste = [item for item in robot.all_url if re.match('(?:http[s]?|ftp)://\w+bin(?:[.]\w+)+(?:[/].*)?', item[0])][:nb_paste]
+        for item in past_liste:
+            time.sleep(0.3)
+            robot.get_server()[1].privmsg(robot.get_channel(), item[0]+', last hit the '+item[2][:-3].replace('T',' at '))
+    def complete_lastpast(self, *ignored):
+        pass
     def do_change(self, line):
         """Params : <channel>
         Info : change the channel of the bot to the given one
         """
         robot.get_server()[1].disconnect('leave')
         robot.get_server()[1].join(line)        
-    def complete_change(self, line):
+    def complete_change(self, *ignored):
         pass
     def do_history(self, line):
         """        Params : [<line>]
@@ -1511,29 +1572,35 @@ class MyCmd(cmd.Cmd):
             print '\n'.join(['-----------------['+str(item+1)+']\n'+self.history[item] for item in self.history if line in self.history[item]])
     def complete_history(self, *args):
         pass
-    def quit(self):
-        sys.exit()
 
 def main():
     try:
+        if __name__ == "__main__":
+            print """"You main direct run has : python bot_local.py [options]"""
         # Threads 
-        thread_1 = Lancheur("bot")
-        thread_2 = Lancheur("client")
+        thread_1 = lancheur("bot")
+        thread_2 = lancheur("client")
         
         # Lanch !
         thread_1.start()
         thread_2.start()
-        cronvdm.start()
-        crondtc.start()
+        #cronvdm.start()
+        #crondtc.start()
         
         # Waitting for end !
-        thread_1.join()
+        #thread_1.join()
         thread_2.join()
     except:
         print 'End program !'
+        sys.exit(0)
 
-
-if __name__ == "__main__":
+if set([argv in ['setup.py', 'install'] for argv in sys.argv]) != set([True]):
+    ESC = Literal('\x1b')
+    integer = Word(nums)
+    escapeSeq = Combine(ESC + '[' + Optional(delimitedList(integer,';')) + oneOf(list(alphas)))
+    
+    UncolorString = lambda s : Suppress(escapeSeq).transformString(s)
+    robot=Robot()
     try:
         _file = open('stat.txt','r+')
         text = _file.read()
@@ -1543,10 +1610,10 @@ if __name__ == "__main__":
             with open('stat.txt', 'w') as outfile:
                 for item in text.split('\n'):
                     outfile.write(item+'\n')
+        stat= {}
         stats = ['words','letters','messages']
         config = ConfigParser.ConfigParser()
         config.readfp(io.BytesIO(text))
-        stat = {}
         def num(s):
             try:
                 return int(s)
@@ -1563,11 +1630,45 @@ if __name__ == "__main__":
     except IOError:
         print '\033[1;33mNo stats found !\033[0m'
         stat= {}
-    cronvdm = Lancheur('cronvdm')
+        text="""[DEFAULT]
+        words = 0
+        letters = 0
+        messages = 0
+        urls = []
+        all_url = []"""
+        config = ConfigParser.ConfigParser()
+        config.readfp(io.BytesIO(text))
+    cronvdm = lancheur('cronvdm')
     cronvdm._iter = croniter('0 * * * *', datetime.now())
-    crondtc = Lancheur('crondtc')
+    crondtc = lancheur('crondtc')
     crondtc._iter = croniter('0 * * * *', datetime.now())
     my_cmd = MyCmd()
+    PROMPT = {'%private%': '0;31', '%host%': '0;31', '%pseudo%': '0;32', '%channel%': '0;34', '%pseudo_private%': '0;32', '%time%': '0;32','%pseudo_other%':'0;33'}
+
+if __name__ == "__main__":
+    __name__ = "__lanched__"
+    if '-h' in sys.argv or '--help' in sys.argv:
+        print '''usage : python '''+os.path.basename(__file__)+''' [OPTIONS]
+        -n : Use to change default bot's Name
+        -p : Use a Password, not by default
+        -c : Use to change default bot's Channel 
+        -s : Use to change default bot's Server
+        --ssl [True|False] : Use to activate or not ssl
+        --port <server_port> : Int require to change server port
+        --prompt : Change color and format of tags in prompt
+            example : "\\033[0;34m%host%\\033[0m"
+                %host% in red
+                %time% in green
+                %channel% in blue
+                %private% in red
+                %pseudo% in green
+                %pseudo_private% in green
+                %pseudo_other% in yellow'''
+        sys.exit(0)
+    args = list(set([sys.argv.count(item) for item in sys.argv if item in ['-n','-s','-c','-p','--prompt','--ssl','--port']]))
+    if not (args == [1] or args == [] ):
+        print '\033[0;33mError during ARGUMENTS processing : InvalidFormat, Duplicate options !\033[0m'
+        sys.exit(0)
     name = ''
     if '-n' in sys.argv and (len(sys.argv)-1)-sys.argv.index('-n') > 0:
         name = sys.argv[sys.argv.index('-n')+1]
@@ -1581,57 +1682,252 @@ if __name__ == "__main__":
     if '-p' in sys.argv and (len(sys.argv)-1)-sys.argv.index('-p') > 0:
         password = sys.argv[sys.argv.index('-p')+1]
     if '--prompt' in sys.argv and (len(sys.argv)-1)-sys.argv.index('--prompt') > 0:
-        PROMPT = {item[1]:item[0] for item in [('1;31', '%host%'), ('1;32', '%time%'), ('1;34', '%channel%'),\
-            ('0;31', '%private%'), ('1;32', '%pseudo%'), ('1;32', '%pseudo_private%'), ('1;33','%pseudo_other%')]+\
-            re.findall('\\033[[]((?:(?:[0-9]|2[1-3]|[3-49][0-7])?;)*(?:[0-9]|2[1-3]|[3-49][0-7])?)m(%(?:host|time|channel|private|pseudo(?:|_private|_other))%)\\033[[]0?m',\
-            sys.argv[sys.argv.index('--prompt')+1])}
+        add = re.findall('\\033[[]((?:(?:[0-9]|2[1-3]|[3-49][0-7])?;)*(?:[0-9]|2[1-3]|[3-49][0-7])?)m(%(?:host|time|channel|private|pseudo(?:|_private|_other))%)\\033[[]0?m',\
+            sys.argv[sys.argv.index('--prompt')+1])
+        if add != []:
+            PROMPT = {item[1]:item[0] for item in [('1;31', '%host%'), ('1;32', '%time%'), ('1;34', '%channel%'),\
+                ('0;31', '%private%'), ('1;32', '%pseudo%'), ('1;32', '%pseudo_private%'), ('1;33','%pseudo_other%')]+add}
+        else:
+            print '\033[0;33mError during PROMPT processing : InvalidFormat !\033[0m'
+            print '\t'+sys.argv[sys.argv.index('--prompt')+1]
+            sys.exit(0)
     else:
         PROMPT = {'%private%': '0;31', '%host%': '0;31', '%pseudo%': '0;32', '%channel%': '0;34', '%pseudo_private%': '0;32', '%time%': '0;32','%pseudo_other%':'0;33'}
-    if name != '' and channel != '' and server != '' and password != '':
+    ssl = ''
+    if '--ssl' in sys.argv and (len(sys.argv)-1)-sys.argv.index('--ssl') > 0:
+        if sys.argv[sys.argv.index('--ssl')+1] in ['True','False']:
+            ssl = (True,False)[sys.argv[sys.argv.index('--ssl')+1] == 'False']
+        else:
+            print '\033[0;33mError during SSL processing : InvalidFormat !\033[0m'
+            print '\t'+sys.argv[sys.argv.index('--ssl')+1]
+            sys.exit(0)
+    server_port = ''
+    if '--port' in sys.argv and (len(sys.argv)-1)-sys.argv.index('--port') > 0:
+        if sys.argv[sys.argv.index('--port')+1].isdigit():
+            server_port = int(sys.argv[sys.argv.index('--port')+1])
+        else:
+            print '\033[0;33mError during PORT processing : InvalidFormat !\033[0m'
+            print '\t'+sys.argv[sys.argv.index('--port')+1]
+    #import itertools
+    #def auto_craft():
+    #    #It could help a lot if you would build with more options
+    #    l = ['name','channel','server','password','ssl','server_port']
+    #    a = [list(itertools.combinations(l,i)) for i in range(1,len(l)+1)]
+    #    b = []
+    #    for c in a:
+    #        b+= c
+    #    a = b[::-1]
+    #    print '    if '+" != '' and ".join(a[0])+" != '':"
+    #    print '        robot = Robot('+','.join(a[0])+')'
+    #    print "        print ('\\033[1;33mrobot get",
+    #    if len(a[0]) > 1:
+    #        for b,c in zip(a[0][:-2],a[0][:-2]):
+    #            print b+" ('+"+c+"+'),",
+    #        print a[0][-2]+" ('+"+a[0][-2]+"+') and "+a[0][-1]+" ('+"+a[0][-1]+"+')!\\033[0m')"
+    #    else :
+    #        print "a "+a[0][0]+" ('+"+a[0][0]+"+')"
+    #    for item in a[1:]:
+    #        print '    elif '+" != '' and ".join(item)+" != '':"
+    #        print '        robot = Robot('+','.join(item)+')'
+    #        print "        print ('\\033[1;33mrobot get",
+    #        if len(item) > 1:
+    #            for b,c in zip(item[:-2],item[:-2]):
+    #                print b+" ('+"+c+"+'),",
+    #            print item[-2]+" ('+"+item[-2]+"+') and "+item[-1]+" ('+"+item[-1]+"+')!\\033[0m')"
+    #        else :
+    #            print "a "+item[0]+" ('+"+item[0]+"+')\\033[0m')"
+    #    print """    else:
+    #        robot = Robot()
+    #        print '\\033[1;33mrobot has default value !\\033[0m'"""
+    if name != '' and channel != '' and server != '' and password != '' and ssl != '' and server_port != '':
+        robot = Robot(name,channel,server,password,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), server ('+server+'), password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and server != '' and password != '' and ssl != '' and server_port != '':
+        robot = Robot(channel,server,password,ssl,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+'), server ('+server+'), password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and server != '' and password != '' and ssl != '' and server_port != '':
+        robot = Robot(name,server,password,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), server ('+server+'), password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and password != '' and ssl != '' and server_port != '':
+        robot = Robot(name,channel,password,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and server != '' and ssl != '' and server_port != '':
+        robot = Robot(name,channel,server,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), server ('+server+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and server != '' and password != '' and server_port != '':
+        robot = Robot(name,channel,server,password,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), server ('+server+'), password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and server != '' and password != '' and ssl != '':
+        robot = Robot(name,channel,server,password,ssl)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), server ('+server+'), password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif server != '' and password != '' and ssl != '' and server_port != '':
+        robot = Robot(server,password,ssl,server_port)
+        print ('\033[1;33mrobot get server ('+server+'), password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and password != '' and ssl != '' and server_port != '':
+        robot = Robot(channel,password,ssl,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+'), password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and server != '' and ssl != '' and server_port != '':
+        robot = Robot(channel,server,ssl,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+'), server ('+server+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and server != '' and password != '' and server_port != '':
+        robot = Robot(channel,server,password,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+'), server ('+server+'), password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and server != '' and password != '' and ssl != '':
+        robot = Robot(channel,server,password,ssl)
+        print ('\033[1;33mrobot get channel ('+channel+'), server ('+server+'), password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and password != '' and ssl != '' and server_port != '':
+        robot = Robot(name,password,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and server != '' and ssl != '' and server_port != '':
+        robot = Robot(name,server,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), server ('+server+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and server != '' and password != '' and server_port != '':
+        robot = Robot(name,server,password,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), server ('+server+'), password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and server != '' and password != '' and ssl != '':
+        robot = Robot(name,server,password,ssl)
+        print ('\033[1;33mrobot get name ('+name+'), server ('+server+'), password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and channel != '' and ssl != '' and server_port != '':
+        robot = Robot(name,channel,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and password != '' and server_port != '':
+        robot = Robot(name,channel,password,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and password != '' and ssl != '':
+        robot = Robot(name,channel,password,ssl)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and channel != '' and server != '' and server_port != '':
+        robot = Robot(name,channel,server,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), server ('+server+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and server != '' and ssl != '':
+        robot = Robot(name,channel,server,ssl)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), server ('+server+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and channel != '' and server != '' and password != '':
         robot = Robot(name,channel,server,password)
-        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+') and server ('+server+') and password ('+password+')!\033[0m')
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+'), server ('+server+') and password ('+password+')!\033[0m')
+    elif password != '' and ssl != '' and server_port != '':
+        robot = Robot(password,ssl,server_port)
+        print ('\033[1;33mrobot get password ('+password+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif server != '' and ssl != '' and server_port != '':
+        robot = Robot(server,ssl,server_port)
+        print ('\033[1;33mrobot get server ('+server+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif server != '' and password != '' and server_port != '':
+        robot = Robot(server,password,server_port)
+        print ('\033[1;33mrobot get server ('+server+'), password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif server != '' and password != '' and ssl != '':
+        robot = Robot(server,password,ssl)
+        print ('\033[1;33mrobot get server ('+server+'), password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif channel != '' and ssl != '' and server_port != '':
+        robot = Robot(channel,ssl,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and password != '' and server_port != '':
+        robot = Robot(channel,password,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+'), password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and password != '' and ssl != '':
+        robot = Robot(channel,password,ssl)
+        print ('\033[1;33mrobot get channel ('+channel+'), password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif channel != '' and server != '' and server_port != '':
+        robot = Robot(channel,server,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+'), server ('+server+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and server != '' and ssl != '':
+        robot = Robot(channel,server,ssl)
+        print ('\033[1;33mrobot get channel ('+channel+'), server ('+server+') and ssl ('+ssl+')!\033[0m')
+    elif channel != '' and server != '' and password != '':
+        robot = Robot(channel,server,password)
+        print ('\033[1;33mrobot get channel ('+channel+'), server ('+server+') and password ('+password+')!\033[0m')
+    elif name != '' and ssl != '' and server_port != '':
+        robot = Robot(name,ssl,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and password != '' and server_port != '':
+        robot = Robot(name,password,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and password != '' and ssl != '':
+        robot = Robot(name,password,ssl)
+        print ('\033[1;33mrobot get name ('+name+'), password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and server != '' and server_port != '':
+        robot = Robot(name,server,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), server ('+server+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and server != '' and ssl != '':
+        robot = Robot(name,server,ssl)
+        print ('\033[1;33mrobot get name ('+name+'), server ('+server+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and server != '' and password != '':
+        robot = Robot(name,server,password)
+        print ('\033[1;33mrobot get name ('+name+'), server ('+server+') and password ('+password+')!\033[0m')
+    elif name != '' and channel != '' and server_port != '':
+        robot = Robot(name,channel,server_port)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and channel != '' and ssl != '':
+        robot = Robot(name,channel,ssl)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and channel != '' and password != '':
+        robot = Robot(name,channel,password)
+        print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+') and password ('+password+')!\033[0m')
     elif name != '' and channel != '' and server != '':
         robot = Robot(name,channel,server)
         print ('\033[1;33mrobot get name ('+name+'), channel ('+channel+') and server ('+server+')!\033[0m')
-    elif name != '' and channel != '' and password != '':
-        robot = Robot(name,channel,password=password)
-        print '\033[1;33mrobot get name ('+name+') and channel ('+channel+') and password ('+password+')!\033[0m'
+    elif ssl != '' and server_port != '':
+        robot = Robot(ssl,server_port)
+        print ('\033[1;33mrobot get ssl ('+ssl+') and server_port ('+server_port+')!\033[0m')
+    elif password != '' and server_port != '':
+        robot = Robot(password,server_port)
+        print ('\033[1;33mrobot get password ('+password+') and server_port ('+server_port+')!\033[0m')
+    elif password != '' and ssl != '':
+        robot = Robot(password,ssl)
+        print ('\033[1;33mrobot get password ('+password+') and ssl ('+ssl+')!\033[0m')
+    elif server != '' and server_port != '':
+        robot = Robot(server,server_port)
+        print ('\033[1;33mrobot get server ('+server+') and server_port ('+server_port+')!\033[0m')
+    elif server != '' and ssl != '':
+        robot = Robot(server,ssl)
+        print ('\033[1;33mrobot get server ('+server+') and ssl ('+ssl+')!\033[0m')
+    elif server != '' and password != '':
+        robot = Robot(server,password)
+        print ('\033[1;33mrobot get server ('+server+') and password ('+password+')!\033[0m')
+    elif channel != '' and server_port != '':
+        robot = Robot(channel,server_port)
+        print ('\033[1;33mrobot get channel ('+channel+') and server_port ('+server_port+')!\033[0m')
+    elif channel != '' and ssl != '':
+        robot = Robot(channel,ssl)
+        print ('\033[1;33mrobot get channel ('+channel+') and ssl ('+ssl+')!\033[0m')
+    elif channel != '' and password != '':
+        robot = Robot(channel,password)
+        print ('\033[1;33mrobot get channel ('+channel+') and password ('+password+')!\033[0m')
+    elif channel != '' and server != '':
+        robot = Robot(channel,server)
+        print ('\033[1;33mrobot get channel ('+channel+') and server ('+server+')!\033[0m')
+    elif name != '' and server_port != '':
+        robot = Robot(name,server_port)
+        print ('\033[1;33mrobot get name ('+name+') and server_port ('+server_port+')!\033[0m')
+    elif name != '' and ssl != '':
+        robot = Robot(name,ssl)
+        print ('\033[1;33mrobot get name ('+name+') and ssl ('+ssl+')!\033[0m')
+    elif name != '' and password != '':
+        robot = Robot(name,password)
+        print ('\033[1;33mrobot get name ('+name+') and password ('+password+')!\033[0m')
+    elif name != '' and server != '':
+        robot = Robot(name,server)
+        print ('\033[1;33mrobot get name ('+name+') and server ('+server+')!\033[0m')
     elif name != '' and channel != '':
         robot = Robot(name,channel)
-        print '\033[1;33mrobot get name ('+name+') and channel ('+channel+')!\033[0m'
-    elif channel != '' and server != '' and password != '':
-        robot = Robot(channel=channel,server=server,password=password)
-        print '\033[1;33mrobot get channel ('+channel+') and server ('+server+') and password ('+password+')!\033[0m'
-    elif channel != '' and server != '':
-        robot = Robot(channel=channel,server=server)
-        print '\033[1;33mrobot get channel ('+channel+') and server ('+server+')!\033[0m'
-    elif name != '' and server != '' and password != '':
-        robot = Robot(name=name,server=server,password=password)
-        print '\033[1;33mrobot get name ('+name+') and serveur ('+server+') and password ('+password+')!\033[0m'
-    elif name != '' and server != '':
-        robot = Robot(name=name,server=server)
-        print '\033[1;33mrobot get name ('+name+') and serveur ('+server+')!\033[0m'
-    elif name != '' and password != '':
-        robot = Robot(name=name,password=password)
-        print '\033[1;33mrobot get name ('+name+') and password ('+password+')!\033[0m'
-    elif channel != '' and password != '':
-        robot = Robot(channel=channel,password=password)
-        print '\033[1;33mrobot get channel ('+channel+') and password ('+password+')!\033[0m'
-    elif server != '' and password != '':
-        robot = Robot(server=server,password=password)
-        print '\033[1;33mrobot get server ('+server+') and password ('+password+')!\033[0m'
-    elif name != '':
-        robot = Robot(name=name)
-        print '\033[1;33mrobot get a name ('+name+')!\033[0m'
-    elif channel != '':
-        robot = Robot(channel=channel)
-        print '\033[1;33mrobot get a channel ('+channel+')!\033[0m'
-    elif server != '':
-        robot = Robot(server=server)
-        print '\033[1;33mrobot get a server ('+server+')!\033[0m'
+        print ('\033[1;33mrobot get name ('+name+') and channel ('+channel+')!\033[0m')
+    elif server_port != '':
+        robot = Robot(server_port)
+        print ('\033[1;33mrobot get a server_port ('+server_port+')!\033[0m')
+    elif ssl != '':
+        robot = Robot(ssl)
+        print ('\033[1;33mrobot get a ssl ('+ssl+')!\033[0m')
     elif password != '':
-        robot = Robot(password=password)
-        print '\033[1;33mrobot get a password ('+password+')!\033[0m'
+        robot = Robot(password)
+        print ('\033[1;33mrobot get a password ('+'*'*len(password)+')!\033[0m')
+    elif server != '':
+        robot = Robot(server)
+        print ('\033[1;33mrobot get a server ('+server+')!\033[0m')
+    elif channel != '':
+        robot = Robot(channel)
+        print ('\033[1;33mrobot get a channel ('+channel+')!\033[0m')
+    elif name != '':
+        robot = Robot(name)
+        print ('\033[1;33mrobot get a name ('+name+')!\033[0m')
     else:
         robot = Robot()
         print '\033[1;33mrobot has default value !\033[0m'
@@ -1644,3 +1940,4 @@ if __name__ == "__main__":
         config.set('DEFAULT','all_url','[]')
         robot.all_url = []
     main()
+#EOF

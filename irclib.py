@@ -145,6 +145,7 @@ class IRC:
         self.delayed_commands = [] # list of tuples in the format (time, function, arguments)
 
         self.add_global_handler("ping", _ping_ponger, -42)
+        self.__stop = False
 
     def server(self):
         """Creates and returns a ServerConnection object."""
@@ -200,8 +201,10 @@ class IRC:
         Arguments:
             timeout -- Parameter to pass to process_once.
         """
-        while 1:
+        while not self.__stop:
             self.process_once(timeout)
+        for c in self.connections:
+            c.disconnect("Connection reset by peer")
 
     def disconnect_all(self, message=""):
         """Disconnects all connections."""
@@ -285,6 +288,9 @@ class IRC:
         self.connections.remove(connection)
         if self.fn_to_remove_socket:
             self.fn_to_remove_socket(connection._get_socket())
+
+    def stop(self):
+        self.__stop = True
 
 _rfc_1459_command_regexp = re.compile("^(:(?P<prefix>[^ ]+) +)?(?P<command>[^ ]+)( *(?P<argument> .+))?")
 
@@ -1009,6 +1015,9 @@ class SimpleIRCClient:
     def start(self):
         """Start the IRC client."""
         self.ircobj.process_forever()
+
+    def stop(self):
+        self.ircobj.stop()
 
 
 class Event:
