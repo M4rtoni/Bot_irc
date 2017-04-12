@@ -11,20 +11,20 @@ There is two version :
 Prefer local control !
 
 You need specefic lib to run bot :
-  -  cmd.Cmd to get a simple and modular CLI
-  -  threading.Thread to run bot and cmd
-  -  ConfigParser and io (load stats)
-  -  croniter (get cron task for VDM and DTC)
-  -  dateutil.parser (check delta between to date)
-  -  An old version of irclib and ircbot (run the bot), some feature have been change !
+  - cmd.Cmd to get a simple and modular CLI
+  - threading.Thread to run bot and cmd
+  - ConfigParser and io (load stats)
+  - croniter (get cron task for VDM and DTC)
+  - dateutil.parser (check delta between to date)
+  - An old version of irclib and ircbot (run the bot), some feature have been change !
 
 The bot can get five diffrents agruments :
   - `name` (-n) use to change name of your bot (use has IRC Pseudo, default : `Bot`)
   - `serveur` (-s) use to change serveur (default : `irc.worldnet.net`)
   - `channel` (-c) use to change channel (default : `#Channel`, prefer to wrap with quotes `#` don't pass very well in CLI args) 
   - `password` (-p) use to add a password (default no password save, note that his appear in plaintext)
-  -  ssl [True|False] (--ssl) use to active or not ssl beetwen bot and server
-  -  port (--port) use a given port to set port use to connect to the server
+  - `ssl` (--ssl) use a `bool` to active or not ssl beetwen bot and server
+  - `port` (--port) use a given port to set port use to connect to the server
   - `prompt` (--prompt) use to change default color in your prompt, there are 7 distinct tags (exclusif to `bot_local.py`) :
     - `%host%` in red
     - `%time%` in green
