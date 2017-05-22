@@ -268,10 +268,8 @@ class Robot(ircbot.SingleServerIRCBot):
                 '\033[0m> \033[1;32m'+self.__user_mode(author)+author),'has left !\033[0m'
         prompt()
     def on_quit(self, serv, ev):
-        channel = ev.target()
         author = irclib.nm_to_n(ev.source())
         message = ev.arguments()
-        info = self.channels[ev.target()]
         if message != []:
             print '\r<\033['+PROMPT['%host%']+'mHost\033[0m,\033['+PROMPT['%time%']+'m'+datetime.now().time().isoformat().split('.')[0]+\
                 '\033[0m> \033[1;32m'+self.__user_mode(author)+author,('has left ! ('+' '.join(message)+')\033[0m')
