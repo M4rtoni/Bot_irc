@@ -34,7 +34,7 @@ The bot can get five diffrents agruments :
     - `%pseudo_private%` in green
     - `%pseudo_other%` in yellow
 
-Exemple of change tag to get host in yellow with no font : `--prompt "\033[0;34m%host%\033[0m"`
+Exemple of change tag to get host in yellow with no font : `--prompt "%host%:\033[33m"`
 
 You can change manualy default setting !
 
@@ -57,7 +57,7 @@ sudo python setup.py install
 
 Let's go !
 ```bash
-python bot_local.py
+python bot.py
 ```
 
 And may be more incomming
